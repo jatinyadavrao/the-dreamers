@@ -1,12 +1,14 @@
 import { CompanyGrid } from "@/components/company-grid";
 import { Reveal } from "@/components/ui/reveal";
 import { getCompanies } from "@/lib/data";
+import { requireUser } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
 export const metadata = { title: "Companies · The Dreamers" };
 
 export default async function CompaniesPage() {
+  await requireUser("/companies");
   const companies = await getCompanies().catch(() => []);
 
   return (

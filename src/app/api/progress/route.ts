@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
+import { getSession } from "@/lib/session";
 import { connectDB } from "@/lib/db";
 import { UserProgress } from "@/models/UserProgress";
 
 export async function GET() {
-  const { userId } = await auth();
+  const session = await getSession();
+  const userId = session?.userId;
   if (!userId) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   await connectDB();
   const docs = await UserProgress.find({ userId }).lean();
@@ -22,7 +23,8 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
-  const { userId } = await auth();
+  const session = await getSession();
+  const userId = session?.userId;
   if (!userId) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   const body = await req.json();
   const { leetcodeId, title, link, difficulty, action, note } = body ?? {};

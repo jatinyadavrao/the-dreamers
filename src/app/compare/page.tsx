@@ -6,12 +6,14 @@ import { Reveal } from "@/components/ui/reveal";
 import { getCompanies, getCompany, compareCompanies } from "@/lib/data";
 import { prettifyCompany } from "@/lib/utils";
 import type { QuestionLite } from "@/lib/data";
+import { requireUser } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
 export const metadata = { title: "Compare companies · The Dreamers" };
 
 export default async function ComparePage({ searchParams }: PageProps<"/compare">) {
+  await requireUser("/compare");
   const sp = await searchParams;
   const a = (Array.isArray(sp.a) ? sp.a[0] : sp.a) ?? "";
   const b = (Array.isArray(sp.b) ? sp.b[0] : sp.b) ?? "";

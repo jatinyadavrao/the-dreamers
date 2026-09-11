@@ -15,6 +15,7 @@ import {
   type Timeframe,
 } from "@/lib/utils";
 import { cn } from "@/lib/utils";
+import { requireUser } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -23,6 +24,7 @@ export default async function CompanyPage({
   searchParams,
 }: PageProps<"/companies/[slug]">) {
   const { slug } = await params;
+  await requireUser(`/companies/${slug}`);
   const sp = await searchParams;
   const tfParam = (Array.isArray(sp.tf) ? sp.tf[0] : sp.tf) as Timeframe | undefined;
   const timeframe: Timeframe = TIMEFRAMES.includes(tfParam as Timeframe)

@@ -4,9 +4,9 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X, Moon, Sun, Sparkles, Shield } from "lucide-react";
-import { Show, SignInButton, UserButton } from "@clerk/nextjs";
+import { Menu, X, Moon, Sun, Sparkles, Shield, LogOut, User as UserIcon } from "lucide-react";
 import { useTheme } from "./theme-provider";
+import { useAuth } from "./auth-provider";
 import { cn } from "@/lib/utils";
 
 const LINKS = [
@@ -20,7 +20,9 @@ const LINKS = [
 export function Navbar({ isAdmin }: { isAdmin: boolean }) {
   const pathname = usePathname();
   const { theme, toggle } = useTheme();
+  const { user, isSignedIn, signOut } = useAuth();
   const [open, setOpen] = useState(false);
+  const [menu, setMenu] = useState(false);
 
   return (
     <header className="sticky top-0 z-50 w-full">
@@ -62,30 +64,48 @@ export function Navbar({ isAdmin }: { isAdmin: boolean }) {
             {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
           </button>
 
-          <Show when="signed-in">
-            <Link
-              href="/dashboard"
-              className="hidden rounded-lg px-3 py-1.5 text-sm font-medium text-[var(--muted)] hover:text-dream-300 sm:block"
-            >
-              Dashboard
-            </Link>
-            {isAdmin && (
-              <Link
-                href="/admin"
-                className="hidden items-center gap-1 rounded-lg px-3 py-1.5 text-sm font-medium text-nebula-400 hover:text-nebula-500 sm:flex"
+          {isSignedIn ? (
+            <div className="relative">
+              <button
+                onClick={() => setMenu((m) => !m)}
+                className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-dream-500 to-nebula-500 text-sm font-bold text-white"
+                aria-label="Account menu"
               >
-                <Shield className="h-3.5 w-3.5" /> Admin
-              </Link>
-            )}
-            <UserButton />
-          </Show>
-          <Show when="signed-out">
-            <SignInButton mode="modal">
-              <button className="rounded-lg bg-gradient-to-r from-dream-500 to-nebula-500 px-4 py-1.5 text-sm font-semibold text-white shadow-lg transition-transform hover:scale-105">
-                Sign in
+                {(user?.name || user?.email || "U").charAt(0).toUpperCase()}
               </button>
-            </SignInButton>
-          </Show>
+              <AnimatePresence>
+                {menu && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -8 }}
+                    className="glass absolute right-0 mt-2 w-52 rounded-xl p-2"
+                    onMouseLeave={() => setMenu(false)}
+                  >
+                    <div className="truncate px-3 py-2 text-xs text-[var(--muted)]">{user?.email}</div>
+                    <Link href="/dashboard" onClick={() => setMenu(false)} className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm hover:bg-dream-500/10">
+                      <UserIcon className="h-4 w-4" /> Dashboard
+                    </Link>
+                    {isAdmin && (
+                      <Link href="/admin" onClick={() => setMenu(false)} className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-nebula-400 hover:bg-nebula-500/10">
+                        <Shield className="h-4 w-4" /> Admin
+                      </Link>
+                    )}
+                    <button onClick={signOut} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-red-400 hover:bg-red-500/10">
+                      <LogOut className="h-4 w-4" /> Sign out
+                    </button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          ) : (
+            <Link
+              href="/sign-in"
+              className="rounded-lg bg-gradient-to-r from-dream-500 to-nebula-500 px-4 py-1.5 text-sm font-semibold text-white shadow-lg transition-transform hover:scale-105"
+            >
+              Sign in
+            </Link>
+          )}
 
           <button
             onClick={() => setOpen((o) => !o)}
@@ -105,7 +125,7 @@ export function Navbar({ isAdmin }: { isAdmin: boolean }) {
             exit={{ opacity: 0, y: -10 }}
             className="glass mx-auto mt-2 max-w-6xl rounded-2xl p-3 md:hidden"
           >
-            {[...LINKS, { href: "/dashboard", label: "Dashboard" }, ...(isAdmin ? [{ href: "/admin", label: "Admin" }] : [])].map(
+            {[...LINKS, ...(isSignedIn ? [{ href: "/dashboard", label: "Dashboard" }] : []), ...(isAdmin ? [{ href: "/admin", label: "Admin" }] : [])].map(
               (l) => (
                 <Link
                   key={l.href}
@@ -116,6 +136,14 @@ export function Navbar({ isAdmin }: { isAdmin: boolean }) {
                   {l.label}
                 </Link>
               )
+            )}
+            {isSignedIn && (
+              <button
+                onClick={() => { setOpen(false); signOut(); }}
+                className="block w-full rounded-lg px-3 py-2.5 text-left text-sm font-medium text-red-400 hover:bg-red-500/10"
+              >
+                Sign out
+              </button>
             )}
           </motion.div>
         )}

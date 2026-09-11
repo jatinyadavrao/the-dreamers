@@ -3,6 +3,7 @@ import { CompanyFilter, DailyChallenge } from "@/components/explore-controls";
 import { Reveal } from "@/components/ui/reveal";
 import { getCompanies, searchQuestions } from "@/lib/data";
 import { dailyIndex } from "@/lib/utils";
+import { requireUser } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -11,6 +12,7 @@ export const metadata = { title: "Explore questions · The Dreamers" };
 export default async function QuestionsPage({
   searchParams,
 }: PageProps<"/questions">) {
+  await requireUser("/questions");
   const sp = await searchParams;
   const company = (Array.isArray(sp.company) ? sp.company[0] : sp.company) ?? "";
 

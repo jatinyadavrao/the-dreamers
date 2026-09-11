@@ -10,7 +10,7 @@ import {
   ArrowUpDown,
   Lock,
 } from "lucide-react";
-import { useAuth } from "@clerk/nextjs";
+import { useAuth } from "./auth-provider";
 import { DifficultyBadge } from "./difficulty-badge";
 import { prettifyCompany, cn, type Difficulty } from "@/lib/utils";
 import type { QuestionLite } from "@/lib/data";
@@ -52,7 +52,7 @@ export function QuestionTable({
     field: "solved" | "bookmarked"
   ) {
     if (!isSignedIn) {
-      window.location.href = "/dashboard";
+      window.location.href = "/sign-in";
       return;
     }
     const cur = progress[row.leetcodeId] ?? { solved: false, bookmarked: false };

@@ -1,13 +1,13 @@
 import type { Metadata } from "next";
 import { Inter, Sora, JetBrains_Mono } from "next/font/google";
-import { ClerkProvider } from "@clerk/nextjs";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
+import { AuthProvider } from "@/components/auth-provider";
 import { CustomCursor } from "@/components/custom-cursor";
 import { AuroraBackground } from "@/components/aurora-background";
 import { Navbar } from "@/components/navbar";
 import { Footer } from "@/components/footer";
-import { isAdmin } from "@/lib/auth";
+import { getCurrentUser, emailIsAdmin } from "@/lib/auth";
 
 const inter = Inter({ variable: "--font-inter", subsets: ["latin"] });
 const sora = Sora({ variable: "--font-sora", subsets: ["latin"], weight: ["500", "600", "700", "800"] });
@@ -19,23 +19,23 @@ export const metadata: Metadata = {
     "Practice previous-year LeetCode questions asked by top companies. Track your progress and chase your dream company.",
 };
 
-// Set the theme class before hydration to avoid a flash.
 const themeScript = `(function(){try{var t=localStorage.getItem('theme')||'dark';if(t==='dark')document.documentElement.classList.add('dark');}catch(e){document.documentElement.classList.add('dark');}})();`;
 
 export default async function RootLayout({ children }: LayoutProps<"/">) {
-  const admin = await isAdmin().catch(() => false);
+  const user = await getCurrentUser().catch(() => null);
+  const admin = emailIsAdmin(user?.email);
 
   return (
-    <ClerkProvider>
-      <html
-        lang="en"
-        className={`${inter.variable} ${sora.variable} ${mono.variable} h-full antialiased`}
-        suppressHydrationWarning
-      >
-        <head>
-          <script dangerouslySetInnerHTML={{ __html: themeScript }} />
-        </head>
-        <body className="min-h-full flex flex-col">
+    <html
+      lang="en"
+      className={`${inter.variable} ${sora.variable} ${mono.variable} h-full antialiased`}
+      suppressHydrationWarning
+    >
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+      </head>
+      <body className="min-h-full flex flex-col">
+        <AuthProvider initialUser={user ? { email: user.email, name: user.name } : null}>
           <ThemeProvider>
             <AuroraBackground />
             <CustomCursor />
@@ -43,8 +43,8 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
             <main className="flex-1">{children}</main>
             <Footer />
           </ThemeProvider>
-        </body>
-      </html>
-    </ClerkProvider>
+        </AuthProvider>
+      </body>
+    </html>
   );
 }

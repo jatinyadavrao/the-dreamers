@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Bookmark, Check, ExternalLink, Trophy, Target, StickyNote } from "lucide-react";
-import { useUser } from "@clerk/nextjs";
+import { useAuth } from "./auth-provider";
 import { DifficultyBadge } from "./difficulty-badge";
 import { cn } from "@/lib/utils";
 
@@ -18,7 +18,8 @@ type Row = {
 };
 
 export function DashboardClient() {
-  const { user } = useUser();
+  const { user } = useAuth();
+  const firstName = user?.name?.split(" ")[0] || "";
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<"bookmarks" | "solved" | "notes">("bookmarks");
@@ -75,7 +76,7 @@ export function DashboardClient() {
   return (
     <div>
       <h1 className="font-display text-3xl font-bold sm:text-4xl">
-        Welcome back{user?.firstName ? `, ${user.firstName}` : ""} 👋
+        Welcome back{firstName ? `, ${firstName}` : ""} 👋
       </h1>
       <p className="mt-2 text-[var(--muted)]">Here&apos;s your progress across every company.</p>
 

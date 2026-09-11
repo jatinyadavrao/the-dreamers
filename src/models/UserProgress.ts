@@ -2,7 +2,7 @@ import mongoose, { Schema, type InferSchemaType } from "mongoose";
 
 const UserProgressSchema = new Schema(
   {
-    userId: { type: String, required: true, index: true }, // Clerk user id
+    userId: { type: String, required: true, index: true }, // app user id (Mongo _id)
     leetcodeId: { type: Number, required: true },
     title: { type: String, default: "" },
     link: { type: String, default: "" },
