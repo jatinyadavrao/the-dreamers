@@ -168,6 +168,16 @@ export async function getProfile(): Promise<ProfileLite> {
   };
 }
 
+export async function getUserStats() {
+  await connectDB();
+  const { User } = await import("@/models/User");
+  const [total, verified] = await Promise.all([
+    User.countDocuments({}),
+    User.countDocuments({ emailVerified: true }),
+  ]);
+  return { total, verified };
+}
+
 export async function getStats() {
   await connectDB();
   const [companies, questions] = await Promise.all([

@@ -1,15 +1,16 @@
 import { AdminClient } from "@/components/admin/admin-client";
-import { getCompanies, getThoughts, getProfile } from "@/lib/data";
+import { getCompanies, getThoughts, getProfile, getUserStats } from "@/lib/data";
 
 export const dynamic = "force-dynamic";
 
 export const metadata = { title: "Admin · The Dreamers" };
 
 export default async function AdminPage() {
-  const [companies, thoughts, profile] = await Promise.all([
+  const [companies, thoughts, profile, userStats] = await Promise.all([
     getCompanies().catch(() => []),
     getThoughts().catch(() => []),
     getProfile().catch(() => null),
+    getUserStats().catch(() => ({ total: 0, verified: 0 })),
   ]);
 
   return (
@@ -20,6 +21,7 @@ export default async function AdminPage() {
         initialProfile={
           profile ?? { name: "", role: "", bio: "", avatarUrl: "", socials: {} }
         }
+        userStats={userStats}
       />
     </section>
   );

@@ -22,10 +22,12 @@ export function AdminClient({
   initialCompanies,
   initialThoughts,
   initialProfile,
+  userStats,
 }: {
   initialCompanies: CompanyLite[];
   initialThoughts: ThoughtLite[];
   initialProfile: ProfileLite;
+  userStats?: { total: number; verified: number };
 }) {
   const [tab, setTab] = useState<TabKey>("companies");
   const [companies, setCompanies] = useState(initialCompanies);
@@ -40,6 +42,13 @@ export function AdminClient({
           <h1 className="font-display text-3xl font-bold">Admin</h1>
           <p className="text-sm text-[var(--muted)]">Manage everything on The Dreamers.</p>
         </div>
+      </div>
+
+      <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <StatCard label="Total users" value={userStats?.total ?? 0} />
+        <StatCard label="Verified users" value={userStats?.verified ?? 0} />
+        <StatCard label="Companies" value={companies.length} />
+        <StatCard label="Thoughts" value={initialThoughts.length} />
       </div>
 
       <div className="mb-8 flex flex-wrap gap-2">
@@ -65,6 +74,15 @@ export function AdminClient({
       {tab === "questions" && <QuestionsPanel companies={companies} />}
       {tab === "suvichar" && <ThoughtsPanel initial={initialThoughts} />}
       {tab === "profile" && <ProfilePanel initial={initialProfile} />}
+    </div>
+  );
+}
+
+function StatCard({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="glass rounded-2xl p-4 text-center">
+      <div className="font-display text-3xl font-bold text-gradient">{value}</div>
+      <div className="mt-1 text-xs text-[var(--muted)]">{label}</div>
     </div>
   );
 }
