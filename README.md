@@ -1,36 +1,63 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# The Dreamers 🚀
 
-## Getting Started
+Company-wise LeetCode previous-year questions with progress tracking, a "Daily Suvichar"
+board, and a full admin panel. Built with **Next.js 16 (App Router)**, **MongoDB (Mongoose)**,
+**Clerk** (Google auth), **Tailwind CSS v4**, **Framer Motion**, and **Recharts**.
 
-First, run the development server:
+Data is sourced from
+[krishnadey30/LeetCode-Questions-CompanyWise](https://github.com/krishnadey30/LeetCode-Questions-CompanyWise)
+(537 CSVs · ~200 companies).
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## Features
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+- **Company-wise question sets** with difficulty / frequency sorting and a timeframe switcher.
+- **Interactive tables** — search, filter, sort, mark solved, bookmark, open on LeetCode.
+- **Global explore** across all companies + a **daily challenge**.
+- **Compare** two companies to find the overlap of problems they both ask.
+- **Dashboard** — solved count, difficulty breakdown, revision (bookmark) list, per-question notes.
+- **Daily Suvichar** — public motivational board you post to from the admin panel.
+- **About Me** with social links.
+- **Admin panel** (email allowlist) — CRUD for companies, questions, thoughts, and profile.
+- Cinematic **intro animation** with a synthesized launch sound (mute toggle), a **custom animated cursor**,
+  aurora background, dark/light theme, and full responsiveness.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Setup
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+1. **Install deps**
+   ```bash
+   npm install
+   ```
 
-## Learn More
+2. **Environment** — copy `.env.example` to `.env.local` and fill in:
+   - `MONGODB_URI` — a free [MongoDB Atlas](https://www.mongodb.com/atlas) M0 cluster connection string.
+   - `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` / `CLERK_SECRET_KEY` — from your [Clerk](https://clerk.com) app.
+     In the Clerk dashboard, enable **Google** as a social connection.
+   - `ADMIN_EMAILS` — comma-separated allowlist (already set to `jatinengineervlogs@gmail.com`).
 
-To learn more about Next.js, take a look at the following resources:
+3. **Seed the database** (imports every company + question; idempotent, safe to re-run):
+   ```bash
+   npm run seed
+   # quick test with a few companies:
+   SEED_LIMIT=5 npm run seed
+   ```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+4. **Run**
+   ```bash
+   npm run dev        # http://localhost:3000
+   ```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Deploy (Vercel, free tier)
 
-## Deploy on Vercel
+1. Push to GitHub and import the repo in Vercel.
+2. Add the same env vars in **Project → Settings → Environment Variables**.
+3. Deploy. Then run `npm run seed` once locally (or from a machine) pointed at the same `MONGODB_URI`.
+4. In Clerk, add your production domain to the allowed origins.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Project structure
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- `src/app` — pages (landing, companies, questions, compare, suvichar, about, dashboard, admin) and API routes.
+- `src/components` — UI (navbar, intro, cursor, question table, charts, admin panels).
+- `src/models` — Mongoose models (Company, Question, UserProgress, Thought, Profile).
+- `src/lib` — `db.ts`, `auth.ts` (admin allowlist), `data.ts` (queries), `sound.ts`, `utils.ts`.
+- `scripts/seed.ts` — GitHub → MongoDB importer.
+- `src/proxy.ts` — Clerk middleware protecting `/dashboard`, `/admin`, and mutation APIs.
