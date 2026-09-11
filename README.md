@@ -5,9 +5,6 @@ board, and a full admin panel. Built with **Next.js 16 (App Router)**, **MongoDB
 custom **email/password auth** (bcrypt + signed session cookies via `jose`), **Tailwind CSS v4**,
 **Framer Motion**, and **Recharts**.
 
-Data is sourced from
-[krishnadey30/LeetCode-Questions-CompanyWise](https://github.com/krishnadey30/LeetCode-Questions-CompanyWise)
-(537 CSVs · ~200 companies).
 
 ## Features
 
