@@ -12,9 +12,11 @@ export function Footer() {
         <p className="text-center text-sm text-[var(--muted)]">
           Chase your dream company. Built with ♥ for aspiring engineers.
         </p>
-        <p className="text-xs text-[var(--muted)]">
-          © {new Date().getFullYear()} The Dreamers
-        </p>
+        <div className="flex items-center gap-4 text-xs text-[var(--muted)]">
+          <Link href="/privacy" className="hover:text-dream-300">Privacy</Link>
+          <Link href="/terms" className="hover:text-dream-300">Terms</Link>
+          <span>© {new Date().getFullYear()} The Dreamers</span>
+        </div>
       </div>
     </footer>
   );
