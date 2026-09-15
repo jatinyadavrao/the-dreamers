@@ -3,8 +3,10 @@ import mongoose, { Schema, type InferSchemaType } from "mongoose";
 const UserSchema = new Schema(
   {
     email: { type: String, required: true, unique: true, lowercase: true, trim: true, index: true },
-    passwordHash: { type: String, required: true },
+    passwordHash: { type: String, default: "" }, // empty for Google-only accounts
     name: { type: String, default: "" },
+    image: { type: String, default: "" },
+    provider: { type: String, default: "password" }, // "password" | "google"
     emailVerified: { type: Boolean, default: false },
 
     // OTP email verification
