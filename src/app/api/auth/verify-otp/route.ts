@@ -32,6 +32,7 @@ export async function POST(req: Request) {
   user.emailVerified = true;
   user.otpHash = "";
   user.otpExpires = null;
+  user.lastLoginAt = new Date();
   await user.save();
 
   const token = await signSession({ userId: String(user._id), email: user.email, name: user.name });

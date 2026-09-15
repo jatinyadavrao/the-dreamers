@@ -1,15 +1,17 @@
 "use client";
 
 import { useState } from "react";
-import { Building2, ListChecks, Sparkles, User, Shield } from "lucide-react";
+import { Building2, ListChecks, Sparkles, User, Shield, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { CompanyLite, ThoughtLite, ProfileLite } from "@/lib/data";
+import type { CompanyLite, ThoughtLite, ProfileLite, UserRow } from "@/lib/data";
 import { CompaniesPanel } from "./companies-panel";
 import { QuestionsPanel } from "./questions-panel";
 import { ThoughtsPanel } from "./thoughts-panel";
 import { ProfilePanel } from "./profile-panel";
+import { UsersPanel } from "./users-panel";
 
 const TABS = [
+  { key: "users", label: "Users", icon: Users },
   { key: "companies", label: "Companies", icon: Building2 },
   { key: "questions", label: "Questions", icon: ListChecks },
   { key: "suvichar", label: "Suvichar", icon: Sparkles },
@@ -23,13 +25,15 @@ export function AdminClient({
   initialThoughts,
   initialProfile,
   userStats,
+  users = [],
 }: {
   initialCompanies: CompanyLite[];
   initialThoughts: ThoughtLite[];
   initialProfile: ProfileLite;
   userStats?: { total: number; verified: number };
+  users?: UserRow[];
 }) {
-  const [tab, setTab] = useState<TabKey>("companies");
+  const [tab, setTab] = useState<TabKey>("users");
   const [companies, setCompanies] = useState(initialCompanies);
 
   return (
@@ -68,6 +72,7 @@ export function AdminClient({
         ))}
       </div>
 
+      {tab === "users" && <UsersPanel users={users} />}
       {tab === "companies" && (
         <CompaniesPanel companies={companies} setCompanies={setCompanies} />
       )}

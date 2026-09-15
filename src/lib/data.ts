@@ -178,6 +178,29 @@ export async function getUserStats() {
   return { total, verified };
 }
 
+export type UserRow = {
+  email: string;
+  name: string;
+  provider: string;
+  emailVerified: boolean;
+  createdAt: string;
+  lastLoginAt: string | null;
+};
+
+export async function getUsers(limit = 500): Promise<UserRow[]> {
+  await connectDB();
+  const { User } = await import("@/models/User");
+  const docs = await User.find({}).sort({ createdAt: -1 }).limit(limit).lean();
+  return docs.map((d: Record<string, unknown>) => ({
+    email: d.email as string,
+    name: (d.name as string) ?? "",
+    provider: (d.provider as string) ?? "password",
+    emailVerified: Boolean(d.emailVerified),
+    createdAt: (d.createdAt as Date)?.toISOString?.() ?? "",
+    lastLoginAt: (d.lastLoginAt as Date)?.toISOString?.() ?? null,
+  }));
+}
+
 export async function getStats() {
   await connectDB();
   const [companies, questions] = await Promise.all([

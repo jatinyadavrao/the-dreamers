@@ -8,6 +8,7 @@ const UserSchema = new Schema(
     image: { type: String, default: "" },
     provider: { type: String, default: "password" }, // "password" | "google"
     emailVerified: { type: Boolean, default: false },
+    lastLoginAt: { type: Date, default: null },
 
     // OTP email verification
     otpHash: { type: String, default: "" },

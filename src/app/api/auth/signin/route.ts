@@ -28,6 +28,9 @@ export async function POST(req: Request) {
     );
   }
 
+  user.lastLoginAt = new Date();
+  await user.save();
+
   const token = await signSession({ userId: String(user._id), email: user.email, name: user.name });
   await setSessionCookie(token);
 

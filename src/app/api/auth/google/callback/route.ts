@@ -56,12 +56,14 @@ export async function GET(req: Request) {
       image: info.picture ?? "",
       provider: "google",
       emailVerified: true,
+      lastLoginAt: new Date(),
     });
   } else {
     // Link Google to an existing account and mark verified.
     user.emailVerified = true;
     if (!user.name && info.name) user.name = info.name;
     if (info.picture) user.image = info.picture;
+    user.lastLoginAt = new Date();
     await user.save();
   }
 
