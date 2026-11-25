@@ -4,11 +4,16 @@ import { connectDB } from "@/lib/db";
 import { User } from "@/models/User";
 import { signSession, setSessionCookie } from "@/lib/session";
 import { googleConfig, siteOrigin, GOOGLE_TOKEN_URL, GOOGLE_USERINFO_URL } from "@/lib/google";
+import { safeNext } from "@/lib/utils";
+import { RULES, clientIp, rateLimit } from "@/lib/rate-limit";
 
 export async function GET(req: Request) {
   const origin = siteOrigin();
   const fail = (reason: string) =>
     NextResponse.redirect(new URL(`/sign-in?error=${reason}`, origin));
+
+  // a visitor sent back here too often goes to the sign-in page with a message, not to an error page
+  if (await rateLimit([[RULES.googleCallbackIp, clientIp(req)]])) return fail("rate_limited");
 
   const { clientId, clientSecret, redirectUri } = googleConfig();
   const url = new URL(req.url);
@@ -17,7 +22,7 @@ export async function GET(req: Request) {
 
   const store = await cookies();
   const savedState = store.get("g_state")?.value;
-  const next = store.get("g_next")?.value || "/companies";
+  const next = safeNext(store.get("g_next")?.value);
   store.delete("g_state");
   store.delete("g_next");
 

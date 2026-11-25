@@ -1,48 +1,62 @@
-import type { Metadata } from "next";
-import { Inter, Sora, JetBrains_Mono } from "next/font/google";
+import type { Metadata, Viewport } from "next";
+import { Onest, JetBrains_Mono } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { AuthProvider } from "@/components/auth-provider";
-import { CustomCursor } from "@/components/custom-cursor";
-import { AuroraBackground } from "@/components/aurora-background";
-import { Navbar } from "@/components/navbar";
-import { Footer } from "@/components/footer";
+import { Navbar } from "@/components/site/navbar";
+import { Footer } from "@/components/site/footer";
+import { CommandPalette } from "@/components/site/command-palette";
+import { InlineScript } from "@/components/inline-script";
 import { getCurrentUser, emailIsAdmin } from "@/lib/auth";
 
-const inter = Inter({ variable: "--font-inter", subsets: ["latin"] });
-const sora = Sora({ variable: "--font-sora", subsets: ["latin"], weight: ["500", "600", "700", "800"] });
-const mono = JetBrains_Mono({ variable: "--font-mono", subsets: ["latin"] });
+const onest = Onest({ variable: "--font-onest", subsets: ["latin"], display: "swap" });
+const mono = JetBrains_Mono({ variable: "--font-jbmono", subsets: ["latin"], display: "swap" });
 
 export const metadata: Metadata = {
-  title: "The Dreamers — Company-wise LeetCode Questions",
+  // absolute URLs for the share image; set NEXT_PUBLIC_SITE_URL to override (previews, another domain)
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://www.thedreamers.in"),
+  title: {
+    default: "The Dreamers: company-wise LeetCode questions for coding interviews",
+    template: "%s · The Dreamers",
+  },
   description:
-    "Practice previous-year LeetCode questions asked by top companies. Track your progress and chase your dream company.",
+    "See which LeetCode questions Amazon, Google and 198 other companies ask, sorted by how often each one comes up. Free forever.",
+  applicationName: "The Dreamers",
+  openGraph: {
+    type: "website",
+    siteName: "The Dreamers",
+    title: "The Dreamers: company-wise LeetCode questions for coding interviews",
+    description: "See which LeetCode questions Amazon, Google and 198 other companies ask, sorted by how often each one comes up.",
+  },
+  twitter: { card: "summary_large_image" },
 };
 
-const themeScript = `(function(){try{var t=localStorage.getItem('theme')||'dark';if(t==='dark')document.documentElement.classList.add('dark');}catch(e){document.documentElement.classList.add('dark');}})();`;
+export const viewport: Viewport = {
+  themeColor: "#18191b",
+};
+
+// the visitor's theme before first paint: dark unless they picked light
+const themeScript = `(function(){try{var t=localStorage.getItem('theme')||'dark';if(t==='dark')document.documentElement.classList.add('dark');else{var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute('content','#eff0f1')}}catch(e){document.documentElement.classList.add('dark');}})();`;
 
 export default async function RootLayout({ children }: LayoutProps<"/">) {
   const user = await getCurrentUser().catch(() => null);
   const admin = emailIsAdmin(user?.email);
 
   return (
-    <html
-      lang="en"
-      className={`${inter.variable} ${sora.variable} ${mono.variable} h-full antialiased`}
-      suppressHydrationWarning
-    >
+    <html lang="en" className={`${onest.variable} ${mono.variable} h-full antialiased`} suppressHydrationWarning>
       <head>
-        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+        <InlineScript html={themeScript} />
       </head>
-      <body className="min-h-full flex flex-col">
+      <body className="flex min-h-full flex-col">
         <AuthProvider initialUser={user ? { email: user.email, name: user.name } : null}>
           <ThemeProvider>
-            <AuroraBackground />
-            <CustomCursor />
             <Navbar isAdmin={admin} />
-            <main className="flex-1">{children}</main>
+            <main id="main" className="flex-1 pt-[var(--nav)]">
+              {children}
+            </main>
             <Footer />
+            <CommandPalette />
           </ThemeProvider>
         </AuthProvider>
         <Analytics />

@@ -6,8 +6,7 @@ import { Plus, Trash2, Star } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { ThoughtLite } from "@/lib/data";
 
-const input =
-  "rounded-xl border border-[var(--border)] bg-[var(--card)] px-3 py-2.5 text-sm outline-none focus:border-dream-400";
+const input = "input input-sm";
 
 export function ThoughtsPanel({ initial }: { initial: ThoughtLite[] }) {
   const router = useRouter();
@@ -59,10 +58,10 @@ export function ThoughtsPanel({ initial }: { initial: ThoughtLite[] }) {
 
   return (
     <div className="space-y-6">
-      <div className="glass rounded-2xl p-5">
-        <h3 className="mb-3 font-display font-semibold">Post a Suvichar</h3>
+      <div className="card p-5">
+        <h3 className="mb-3 font-sans font-medium tracking-normal">Post a Suvichar</h3>
         <textarea
-          className={`${input} w-full`}
+          className="textarea w-full"
           rows={3}
           placeholder="Write something motivational…"
           value={text}
@@ -70,11 +69,11 @@ export function ThoughtsPanel({ initial }: { initial: ThoughtLite[] }) {
         />
         <div className="mt-3 flex flex-wrap items-center gap-3">
           <input className={`${input} w-40`} placeholder="Category" value={category} onChange={(e) => setCategory(e.target.value)} />
-          <label className="flex items-center gap-2 text-sm text-[var(--muted)]">
+          <label className="flex items-center gap-2 text-sm text-muted">
             <input type="checkbox" checked={feature} onChange={(e) => setFeature(e.target.checked)} />
             Feature as today&apos;s thought
           </label>
-          <button onClick={add} className="ml-auto flex items-center gap-2 rounded-xl bg-gradient-to-r from-dream-500 to-nebula-500 px-5 py-2.5 text-sm font-semibold text-white">
+          <button onClick={add} className="ml-auto flex items-center gap-2 btn btn-primary btn-sm">
             <Plus className="h-4 w-4" /> Post
           </button>
         </div>
@@ -82,22 +81,22 @@ export function ThoughtsPanel({ initial }: { initial: ThoughtLite[] }) {
 
       <div className="space-y-3">
         {thoughts.map((t) => (
-          <div key={t.id} className={cn("glass rounded-2xl p-4", t.isFeatured && "border-nebula-400/50")}>
+          <div key={t.id} className={cn("card p-4", t.isFeatured && "border-[color-mix(in_oklab,var(--accent)_45%,transparent)]")}>
             <div className="flex items-start justify-between gap-3">
               <p className="leading-relaxed">“{t.text}”</p>
               <div className="flex shrink-0 items-center gap-1">
-                <button onClick={() => feat(t.id)} aria-label="Feature" className={cn("rounded-lg p-2", t.isFeatured ? "text-nebula-400" : "text-[var(--muted)] hover:text-nebula-400")}>
+                <button onClick={() => feat(t.id)} aria-label="Feature" className={cn("rounded-[4px] p-2", t.isFeatured ? "text-accent-text" : "text-muted hover:text-accent-text")}>
                   <Star className={cn("h-4 w-4", t.isFeatured && "fill-current")} />
                 </button>
-                <button onClick={() => remove(t.id)} aria-label="Delete" className="rounded-lg p-2 text-[var(--muted)] hover:text-red-400">
+                <button onClick={() => remove(t.id)} aria-label="Delete" className="rounded-[4px] p-2 text-muted hover:text-danger">
                   <Trash2 className="h-4 w-4" />
                 </button>
               </div>
             </div>
-            <span className="mt-2 inline-block text-xs text-dream-300">{t.category}</span>
+            <span className="mt-2 inline-block text-xs text-muted">{t.category}</span>
           </div>
         ))}
-        {thoughts.length === 0 && <p className="text-center text-sm text-[var(--muted)]">No thoughts yet.</p>}
+        {thoughts.length === 0 && <p className="text-center text-sm text-muted">No thoughts yet.</p>}
       </div>
     </div>
   );

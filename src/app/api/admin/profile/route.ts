@@ -1,10 +1,15 @@
 import { NextResponse } from "next/server";
-import { isAdmin } from "@/lib/auth";
+import { emailIsAdmin } from "@/lib/auth";
+import { getSession } from "@/lib/session";
+import { RULES, rateLimit } from "@/lib/rate-limit";
 import { connectDB } from "@/lib/db";
 import { Profile } from "@/models/Profile";
 
 export async function PATCH(req: Request) {
-  if (!(await isAdmin())) return NextResponse.json({ error: "forbidden" }, { status: 403 });
+  const user = await getSession();
+  if (!user || !emailIsAdmin(user.email)) return NextResponse.json({ error: "forbidden" }, { status: 403 });
+  const limited = await rateLimit([[RULES.admin, user.userId]]);
+  if (limited) return limited;
   const { name, role, bio, avatarUrl, socials } = await req.json();
   await connectDB();
   const set: Record<string, unknown> = {};

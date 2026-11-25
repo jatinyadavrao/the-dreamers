@@ -4,7 +4,7 @@ import { Company } from "@/models/Company";
 import { Question } from "@/models/Question";
 import { Thought } from "@/models/Thought";
 import { Profile } from "@/models/Profile";
-import type { Difficulty, Timeframe } from "./utils";
+import { companyLabel, dailyIndex, escapeRegex, type Difficulty, type Timeframe } from "./utils";
 
 export type CompanyLite = {
   name: string;
@@ -24,29 +24,39 @@ export type QuestionLite = {
   timeframe: string;
 };
 
-export async function getCompanies(): Promise<CompanyLite[]> {
-  await connectDB();
-  const docs = await Company.find({})
-    .sort({ questionCount: -1, name: 1 })
-    .lean();
-  return docs.map((d: Record<string, unknown>) => ({
-    name: d.name as string,
-    slug: d.slug as string,
+/** One row per problem across every company (the Questions page). */
+export type ExploreQuestion = QuestionLite & { companyCount: number };
+
+function mapCompany(d: Record<string, unknown>): CompanyLite {
+  const slug = d.slug as string;
+  return {
+    name: companyLabel(d.name as string, slug),
+    slug,
     logoUrl: (d.logoUrl as string) ?? "",
     questionCount: (d.questionCount as number) ?? 0,
-  }));
+  };
+}
+
+/** A small per-instance memo for data that changes rarely (the home page's showcase). */
+const memoStore = new Map<string, { at: number; value: unknown }>();
+async function memo<T>(key: string, ttlMs: number, fn: () => Promise<T>): Promise<T> {
+  const hit = memoStore.get(key);
+  if (hit && Date.now() - hit.at < ttlMs) return hit.value as T;
+  const value = await fn();
+  memoStore.set(key, { at: Date.now(), value });
+  return value;
+}
+
+export async function getCompanies(): Promise<CompanyLite[]> {
+  await connectDB();
+  const docs = await Company.find({}).sort({ questionCount: -1, name: 1 }).lean();
+  return docs.map((d) => mapCompany(d as Record<string, unknown>));
 }
 
 export async function getCompany(slug: string): Promise<CompanyLite | null> {
   await connectDB();
   const d = await Company.findOne({ slug }).lean<Record<string, unknown>>();
-  if (!d) return null;
-  return {
-    name: d.name as string,
-    slug: d.slug as string,
-    logoUrl: (d.logoUrl as string) ?? "",
-    questionCount: (d.questionCount as number) ?? 0,
-  };
+  return d ? mapCompany(d) : null;
 }
 
 function mapQuestion(d: Record<string, unknown>): QuestionLite {
@@ -62,19 +72,14 @@ function mapQuestion(d: Record<string, unknown>): QuestionLite {
   };
 }
 
-export async function getCompanyQuestions(
-  slug: string,
-  timeframe: Timeframe
-): Promise<QuestionLite[]> {
+export async function getCompanyQuestions(slug: string, timeframe: Timeframe): Promise<QuestionLite[]> {
   await connectDB();
   // Fall back to whatever timeframe exists if the requested one is empty.
-  let docs = await Question.find({ company: slug, timeframe })
-    .sort({ frequency: -1 })
-    .lean();
+  let docs = await Question.find({ company: slug, timeframe }).sort({ frequency: -1 }).lean();
   if (!docs.length) {
     docs = await Question.find({ company: slug }).sort({ frequency: -1 }).lean();
   }
-  return docs.map(mapQuestion);
+  return docs.map((d) => mapQuestion(d as Record<string, unknown>));
 }
 
 export async function getAvailableTimeframes(slug: string): Promise<string[]> {
@@ -90,30 +95,176 @@ export async function searchQuestions(opts: {
 }): Promise<QuestionLite[]> {
   await connectDB();
   const filter: Record<string, unknown> = { timeframe: "alltime" };
-  if (opts.q) filter.title = { $regex: opts.q, $options: "i" };
+  if (opts.q) filter.title = { $regex: escapeRegex(opts.q), $options: "i" };
   if (opts.difficulty) filter.difficulty = opts.difficulty;
   if (opts.company) filter.company = opts.company;
   const docs = await Question.find(filter)
     .sort({ frequency: -1 })
     .limit(opts.limit ?? 100)
     .lean();
-  return docs.map(mapQuestion);
+  return docs.map((d) => mapQuestion(d as Record<string, unknown>));
+}
+
+/** Every problem once, with how many companies ask it (all time), most widely asked first. */
+export async function getExploreQuestions(): Promise<ExploreQuestion[]> {
+  await connectDB();
+  const rows = await Question.aggregate<{
+    _id: number;
+    title: string;
+    difficulty: Difficulty;
+    acceptance: number;
+    link: string;
+    frequency: number;
+    company: string;
+    companyCount: number;
+  }>([
+    { $match: { timeframe: "alltime" } },
+    { $sort: { frequency: -1 } },
+    {
+      $group: {
+        _id: "$leetcodeId",
+        title: { $first: "$title" },
+        difficulty: { $first: "$difficulty" },
+        acceptance: { $max: "$acceptance" },
+        link: { $first: "$link" },
+        frequency: { $max: "$frequency" },
+        company: { $first: "$company" },
+        companyCount: { $sum: 1 },
+      },
+    },
+    { $sort: { companyCount: -1, frequency: -1, _id: 1 } },
+  ]);
+  return rows.map((r) => ({
+    leetcodeId: r._id,
+    title: r.title,
+    difficulty: r.difficulty,
+    acceptance: r.acceptance ?? 0,
+    frequency: r.frequency ?? 0,
+    link: r.link ?? "",
+    company: r.company,
+    timeframe: "alltime",
+    companyCount: r.companyCount,
+  }));
+}
+
+export type QuestionDetail = {
+  leetcodeId: number;
+  title: string;
+  difficulty: Difficulty;
+  acceptance: number;
+  link: string;
+  companies: { slug: string; name: string; frequency: number; timeframes: string[] }[];
+};
+
+/** Who asks one problem, most often first (all-time frequency, else the best of the others). */
+export async function getQuestionDetail(leetcodeId: number): Promise<QuestionDetail | null> {
+  await connectDB();
+  const rows = await Question.find({ leetcodeId }).lean<Record<string, unknown>[]>();
+  if (!rows.length) return null;
+  const by = new Map<string, { all: number | null; best: number; tfs: Set<string> }>();
+  for (const r of rows) {
+    const slug = r.company as string;
+    const e = by.get(slug) ?? { all: null, best: 0, tfs: new Set<string>() };
+    const f = (r.frequency as number) ?? 0;
+    if (r.timeframe === "alltime") e.all = f;
+    e.best = Math.max(e.best, f);
+    e.tfs.add(r.timeframe as string);
+    by.set(slug, e);
+  }
+  const names = await Company.find({ slug: { $in: [...by.keys()] } }, { slug: 1, name: 1 }).lean<
+    { slug: string; name: string }[]
+  >();
+  const nameOf = new Map(names.map((n) => [n.slug, companyLabel(n.name, n.slug)]));
+  const first = (rows.find((r) => r.timeframe === "alltime") ?? rows[0]) as Record<string, unknown>;
+  const order = ["6months", "1year", "2year", "alltime"];
+  return {
+    leetcodeId,
+    title: first.title as string,
+    difficulty: first.difficulty as Difficulty,
+    acceptance: (first.acceptance as number) ?? 0,
+    link: (first.link as string) ?? "",
+    companies: [...by.entries()]
+      .map(([slug, e]) => ({
+        slug,
+        name: nameOf.get(slug) ?? companyLabel(undefined, slug),
+        frequency: e.all ?? e.best,
+        timeframes: [...e.tfs].sort((a, b) => order.indexOf(a) - order.indexOf(b)),
+      }))
+      .sort((a, b) => b.frequency - a.frequency || a.name.localeCompare(b.name)),
+  };
+}
+
+export type SearchResult = {
+  companies: { name: string; slug: string; questionCount: number }[];
+  questions: { leetcodeId: number; title: string; difficulty: Difficulty; companyCount: number }[];
+};
+
+/** The command palette: companies by name, problems by title or number. */
+export async function quickSearch(raw: string): Promise<SearchResult> {
+  const term = raw.trim().slice(0, 80);
+  if (!term) return { companies: [], questions: [] };
+  await connectDB();
+  const rx = new RegExp(escapeRegex(term), "i");
+  const id = /^\d{1,5}$/.test(term) ? Number(term) : null;
+  const squash = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, "");
+  const want = squash(term);
+  const [companies, questions] = await Promise.all([
+    // ~200 small documents: match the shown name, the stored name and the slug, punctuation ignored
+    want
+      ? Company.find({}, { name: 1, slug: 1, logoUrl: 1, questionCount: 1 })
+          .sort({ questionCount: -1 })
+          .lean<Record<string, unknown>[]>()
+          .then((all) =>
+            all
+              .filter((c) => {
+                const slug = c.slug as string;
+                return [companyLabel(c.name as string, slug), c.name as string, slug].some((n) => squash(n ?? "").includes(want));
+              })
+              .slice(0, 6)
+          )
+      : Promise.resolve([] as Record<string, unknown>[]),
+    Question.aggregate<{ _id: number; title: string; difficulty: Difficulty; companyCount: number }>([
+      { $match: { timeframe: "alltime", ...(id ? { $or: [{ leetcodeId: id }, { title: rx }] } : { title: rx }) } },
+      {
+        $group: {
+          _id: "$leetcodeId",
+          title: { $first: "$title" },
+          difficulty: { $first: "$difficulty" },
+          companyCount: { $sum: 1 },
+        },
+      },
+      { $sort: { companyCount: -1, _id: 1 } },
+      { $limit: 8 },
+    ]),
+  ]);
+  return {
+    companies: companies.map((c) => {
+      const m = mapCompany(c);
+      return { name: m.name, slug: m.slug, questionCount: m.questionCount };
+    }),
+    questions: questions
+      .sort((a, b) => (id ? Number(b._id === id) - Number(a._id === id) : 0))
+      .map((q) => ({ leetcodeId: q._id, title: q.title, difficulty: q.difficulty, companyCount: q.companyCount })),
+  };
 }
 
 export async function compareCompanies(a: string, b: string) {
   await connectDB();
-  const [qa, qb] = await Promise.all([
-    getCompanyQuestions(a, "alltime"),
-    getCompanyQuestions(b, "alltime"),
-  ]);
+  const [qa, qb] = await Promise.all([getCompanyQuestions(a, "alltime"), getCompanyQuestions(b, "alltime")]);
   const mapA = new Map(qa.map((q) => [q.leetcodeId, q]));
   const mapB = new Map(qb.map((q) => [q.leetcodeId, q]));
-  const shared = qa
-    .filter((q) => mapB.has(q.leetcodeId))
-    .sort((x, y) => y.frequency - x.frequency);
+  const shared = qa.filter((q) => mapB.has(q.leetcodeId)).sort((x, y) => y.frequency - x.frequency);
   const onlyA = qa.filter((q) => !mapB.has(q.leetcodeId));
   const onlyB = qb.filter((q) => !mapA.has(q.leetcodeId));
-  return { shared, onlyA, onlyB, countA: qa.length, countB: qb.length };
+  // how often the other company asks each shared problem, for the side-by-side columns
+  const sharedFreqB: Record<number, number> = {};
+  for (const q of shared) sharedFreqB[q.leetcodeId] = mapB.get(q.leetcodeId)?.frequency ?? 0;
+  return { shared, sharedFreqB, onlyA, onlyB, countA: qa.length, countB: qb.length };
+}
+
+/** Today's question: the same pick for everyone, from the most widely asked problems. */
+export function pickDaily<T>(list: T[]): T | null {
+  return list.length ? list[dailyIndex(list.length)] : null;
 }
 
 export type ThoughtLite = {
@@ -208,4 +359,83 @@ export async function getStats() {
     Question.distinct("leetcodeId", { timeframe: "alltime" }),
   ]);
   return { companies, questions: questions.length };
+}
+
+/** Per company: how many of its problems this user has solved (any timeframe). */
+export async function getCompanyProgress(solvedIds: number[]): Promise<Record<string, number>> {
+  if (!solvedIds.length) return {};
+  await connectDB();
+  const rows = await Question.aggregate<{ _id: string; n: number }>([
+    { $match: { leetcodeId: { $in: solvedIds } } },
+    { $group: { _id: { c: "$company", id: "$leetcodeId" } } },
+    { $group: { _id: "$_id.c", n: { $sum: 1 } } },
+  ]);
+  return Object.fromEntries(rows.map((r) => [r._id, r.n]));
+}
+
+/* ------------------------------------------------------------------ home page */
+
+export type ShowcaseRow = { leetcodeId: number; title: string; difficulty: Difficulty; acceptance: number };
+export type HomeShowcase = {
+  companies: { name: string; slug: string }[];
+  hero: { company: string; rows: ShowcaseRow[] } | null;
+  mostAsked: { leetcodeId: number; title: string; difficulty: Difficulty; companyCount: number }[];
+  open: { title: string; difficulty: Difficulty; acceptance: number; total: number; companies: { name: string; slug: string; frequency: number }[] } | null;
+  pair: { a: string; b: string; shared: { title: string; difficulty: Difficulty }[] } | null;
+  daily: { title: string; difficulty: Difficulty } | null;
+};
+
+/** Real rows for the home page's product pictures (cached for 10 minutes per instance). */
+export async function getHomeShowcase(): Promise<HomeShowcase> {
+  return memo("home-showcase", 10 * 60 * 1000, async () => {
+    const [companies, explore] = await Promise.all([getCompanies(), getExploreQuestions()]);
+    const top = companies.slice(0, 5).map((c) => ({ name: c.name, slug: c.slug }));
+    const lead = companies.find((c) => c.slug === "amazon") ?? companies[0];
+    const second = companies.find((c) => c.slug === "google" && c.slug !== lead?.slug) ?? companies.find((c) => c.slug !== lead?.slug);
+
+    const [heroRows, detail, pairResult] = await Promise.all([
+      lead ? getCompanyQuestions(lead.slug, "alltime").then((r) => r.slice(0, 7)) : Promise.resolve([]),
+      explore[0] ? getQuestionDetail(explore[0].leetcodeId) : Promise.resolve(null),
+      lead && second ? compareCompanies(lead.slug, second.slug) : Promise.resolve(null),
+    ]);
+
+    const sidebar = lead ? [lead, ...companies.filter((c) => c.slug !== lead.slug)].slice(0, 5) : top;
+    const daily = pickDaily(explore.slice(0, 600));
+    return {
+      companies: sidebar.map((c) => ({ name: c.name, slug: c.slug })),
+      hero: lead
+        ? {
+            company: lead.name,
+            rows: heroRows.map((q) => ({ leetcodeId: q.leetcodeId, title: q.title, difficulty: q.difficulty, acceptance: q.acceptance })),
+          }
+        : null,
+      mostAsked: explore.slice(0, 9).map((q) => ({ leetcodeId: q.leetcodeId, title: q.title, difficulty: q.difficulty, companyCount: q.companyCount })),
+      open: detail
+        ? {
+            title: detail.title,
+            difficulty: detail.difficulty,
+            acceptance: detail.acceptance,
+            total: detail.companies.length,
+            companies: detail.companies.slice(0, 9).map((c) => ({ name: c.name, slug: c.slug, frequency: c.frequency })),
+          }
+        : null,
+      pair:
+        lead && second && pairResult
+          ? {
+              a: lead.name,
+              b: second.name,
+              shared: pairResult.shared.slice(0, 3).map((q) => ({ title: q.title, difficulty: q.difficulty })),
+            }
+          : null,
+      daily: daily ? { title: daily.title, difficulty: daily.difficulty } : null,
+    };
+  });
+}
+
+/** The ids of the questions this user has marked solved. */
+export async function getSolvedIds(userId: string): Promise<number[]> {
+  await connectDB();
+  const { UserProgress } = await import("@/models/UserProgress");
+  const rows = await UserProgress.find({ userId, solved: true }, { leetcodeId: 1 }).lean<{ leetcodeId: number }[]>();
+  return rows.map((r) => r.leetcodeId);
 }

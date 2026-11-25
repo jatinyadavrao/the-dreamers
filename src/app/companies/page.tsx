@@ -1,34 +1,44 @@
+import { Suspense } from "react";
 import { CompanyGrid } from "@/components/company-grid";
-import { Reveal } from "@/components/ui/reveal";
-import { getCompanies } from "@/lib/data";
+import { EmptyState, PageHead } from "@/components/ui/kit";
+import { CompanyGridSkeleton } from "@/components/ui/skeletons";
+import { getCompanies, getCompanyProgress, getSolvedIds } from "@/lib/data";
 import { requireUser } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
-export const metadata = { title: "Companies · The Dreamers" };
+export const metadata = { title: "Companies" };
 
 export default async function CompaniesPage() {
-  await requireUser("/companies");
-  const companies = await getCompanies().catch(() => []);
-
+  // the guard runs before anything streams, so a signed-out visitor gets a real redirect
+  const user = await requireUser("/companies");
   return (
-    <section className="mx-auto max-w-6xl px-6 py-14">
-      <Reveal className="mb-10 text-center">
-        <h1 className="font-display text-4xl font-bold sm:text-5xl">
-          Pick your <span className="text-gradient">dream company</span>
-        </h1>
-        <p className="mt-3 text-[var(--muted)]">
-          {companies.length} companies · sorted by how many questions we&apos;ve got.
-        </p>
-      </Reveal>
-
-      {companies.length === 0 ? (
-        <div className="glass rounded-2xl p-10 text-center text-[var(--muted)]">
-          No companies yet. Run <code className="text-dream-300">npm run seed</code> to import data.
-        </div>
-      ) : (
-        <CompanyGrid companies={companies} />
-      )}
+    <section className="wrap pb-24">
+      <PageHead title="Companies" lead="Every company, sorted by how many questions it asks. Open one to see its list." />
+      <Suspense fallback={<CompanyGridSkeleton />}>
+        <Companies userId={user.userId} />
+      </Suspense>
     </section>
   );
+}
+
+async function Companies({ userId }: { userId: string }) {
+  const [companies, solvedIds] = await Promise.all([
+    getCompanies().catch(() => []),
+    getSolvedIds(userId).catch(() => []),
+  ]);
+  const progress = await getCompanyProgress(solvedIds).catch(() => ({}));
+  if (companies.length === 0) {
+    return (
+      <EmptyState
+        title="No companies yet"
+        body={
+          <>
+            Run <code className="font-mono text-ink">npm run seed</code> to import the question lists.
+          </>
+        }
+      />
+    );
+  }
+  return <CompanyGrid companies={companies} progress={progress} />;
 }

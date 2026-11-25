@@ -1,0 +1,472 @@
+/*
+  Product-UI fragments (window, checklist, notification stack) drawn in the page's own colours.
+  Ported from taste-skill's UI fragment kit (https://github.com/leonxlnx/taste-skill), MIT License,
+  Copyright (c) 2026 Leonxlnx (see src/lib/fx/LICENSE). Styled only by --fx-* / --ui-* custom properties.
+*/
+:where(.ui) {
+  --u-bg: var(--fx-bg, #ffffff);
+  --u-surface: var(--fx-surface, #f4f4f3);
+  --u-ink: var(--fx-ink, #111111);
+  --u-muted: var(--fx-muted, #6b6b6b);
+  --u-accent: var(--fx-accent, #e8571f);
+  --u-accent-ink: var(--fx-accent-ink, #ffffff);
+  --u-r: var(--ui-radius, 12px);
+  --u-r2: max(4px, calc(var(--u-r) - 4px));
+  --u-r3: max(4px, calc(var(--u-r) - 6px));
+
+  /* lines and fills, all mixed from the palette */
+  --u-line: color-mix(in oklab, var(--u-ink) 9%, transparent);
+  --u-line-2: color-mix(in oklab, var(--u-ink) 15%, transparent);
+  --u-border: color-mix(in oklab, var(--u-ink) 12%, transparent);
+  --u-fill: color-mix(in oklab, var(--u-ink) 3.5%, var(--u-bg));
+  --u-fill-2: color-mix(in oklab, var(--u-ink) 7%, var(--u-bg));
+  --u-fill-3: color-mix(in oklab, var(--u-ink) 11%, var(--u-bg));
+  --u-text-2: color-mix(in oklab, var(--u-ink) 80%, var(--u-bg));
+  --u-soft: color-mix(in oklab, var(--u-muted) 80%, var(--u-bg));
+  --u-tint: color-mix(in oklab, var(--u-accent) 13%, var(--u-bg));
+  --u-tint-2: color-mix(in oklab, var(--u-accent) 24%, var(--u-bg));
+  --u-accent-text: color-mix(in oklab, var(--u-accent) 74%, var(--u-ink));
+  --u-skel: color-mix(in oklab, var(--u-ink) 10%, var(--u-bg));
+  /* a brand tile is light on every surface, so a logo keeps its own colours (references/icons.md) */
+  --u-tile: #ffffff;
+  --u-tile-edge: inset 0 0 0 1px rgb(0 0 0 / 0.09), 0 1px 2px rgb(0 0 0 / 0.12);
+
+  /* depth: shadows grow and a top highlight appears as the fragment surface gets darker */
+  --u-sh: rgb(0 0 0 / 0.14);
+  --u-sh: oklch(from var(--u-bg) 0 0 0 / calc(0.5 - l * 0.38));
+  --u-hi: transparent;
+  --u-hi: oklch(from var(--u-bg) 1 0 0 / clamp(0, calc(0.11 - l * 0.11), 0.09));
+  --u-shadow:
+    inset 0 1px 0 var(--u-hi),
+    0 1px 1px color-mix(in oklab, var(--u-sh) 40%, transparent),
+    0 2px 4px -1px color-mix(in oklab, var(--u-sh) 45%, transparent),
+    0 12px 24px -8px color-mix(in oklab, var(--u-sh) 80%, transparent),
+    0 32px 64px -24px var(--u-sh);
+  --u-shadow-sm:
+    inset 0 1px 0 var(--u-hi),
+    0 1px 2px color-mix(in oklab, var(--u-sh) 55%, transparent),
+    0 6px 16px -6px color-mix(in oklab, var(--u-sh) 80%, transparent);
+  --u-ease: var(--ease, cubic-bezier(.2, .8, .2, 1));   /* the page's one UI ease-out (system.css --ease) */
+  /* the name is older than the rule: a strong ease-out that lands softly and never passes its mark (no overshoot, motion.md) */
+  --u-spring: cubic-bezier(.22, 1, .36, 1);
+
+  font-family: var(--ui-font, system-ui, -apple-system, "Segoe UI", sans-serif);
+  font-size: 13px;
+  line-height: 20px;
+  font-weight: 400;
+  color: var(--u-ink);
+  -webkit-font-smoothing: antialiased;
+  font-feature-settings: "tnum" 1, "cv11" 1;
+  text-align: left;
+  letter-spacing: -0.003em;
+  box-sizing: border-box;
+}
+:where(.ui) *, :where(.ui) *::before, :where(.ui) *::after { box-sizing: border-box; }
+/* a fragment never runs out of its panel on its own: on a narrow panel it narrows; a placement that
+   crops it on purpose (cards.css, from 640px: every placement but .at-center) lifts this */
+[data-ui] { max-width: 100%; }
+/* fragments use div and span for text so page rules like `.card p` cannot reach them */
+.ui :where(ul, ol, li, figure, blockquote, article, aside, nav) { margin: 0; padding: 0; list-style: none; }
+.ui :where(mark) { background: none; color: inherit; }
+:where(.ui) button { font: inherit; color: inherit; background: none; border: 0; padding: 0; margin: 0; cursor: default; }
+:where(.ui) svg { display: block; flex: none; }
+
+/* ---------------------------------------------------------------- the window every fragment sits in */
+.ui-panel {
+  position: relative;
+  background: var(--u-bg);
+  border: 1px solid var(--u-border);
+  border-radius: var(--u-r);
+  box-shadow: var(--u-shadow);
+  max-width: 100%;
+}
+.ui-head {
+  display: flex; align-items: center; gap: 8px;
+  height: 44px; padding: 0 12px 0 16px;
+  border-bottom: 1px solid var(--u-line);
+}
+.ui-title { font-size: 13px; font-weight: 500; line-height: 20px; white-space: nowrap; }
+.ui-meta { font-size: 13px; line-height: 16px; color: var(--u-muted); white-space: nowrap; }
+.ui-spacer { flex: 1; }
+.ui-sep { width: 1px; height: 16px; background: var(--u-line-2); flex: none; }
+
+/* window chrome: three quiet dots and a centred title */
+.ui-dots { display: flex; gap: 6px; flex: none; }
+.ui-dots i { width: 10px; height: 10px; border-radius: 50%; background: var(--u-fill-3); box-shadow: inset 0 0 0 0.5px var(--u-line); }
+
+/* ---------------------------------------------------------------- controls */
+/* the primary button is the ink (as on figma.com and x.ai); the accent is kept for one touch */
+.ui-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px; flex: none;
+  height: 28px; padding: 0 10px; border-radius: max(6px, var(--u-r3));
+  font-size: 13px; font-weight: 500; line-height: 1; white-space: nowrap;
+  background: var(--u-ink); color: var(--u-bg);
+  box-shadow: inset 0 1px 0 color-mix(in oklab, var(--u-bg) 14%, transparent), 0 1px 2px color-mix(in oklab, var(--u-sh) 60%, transparent);
+  transition: transform 160ms var(--u-ease), background-color 200ms var(--u-ease), color 200ms var(--u-ease);
+}
+.ui-btn--accent { background: var(--u-accent); color: var(--u-accent-ink); }
+.ui-btn--ghost { background: var(--u-bg); color: var(--u-ink); box-shadow: inset 0 0 0 1px var(--u-line-2), 0 1px 2px color-mix(in oklab, var(--u-sh) 30%, transparent); }
+.ui-btn--quiet { background: transparent; color: var(--u-muted); box-shadow: none; }
+.ui-btn--sm { height: 24px; padding: 0 8px; font-size: 13px; }
+.ui-btn .ui-icon { width: 14px; height: 14px; }
+.ui-btn.is-pressed { transform: scale(0.96); }
+
+/* status: a dot and a word; quiet by default, the accent only where something is happening */
+.ui-chip {
+  display: inline-flex; align-items: center; gap: 6px; flex: none;
+  height: 22px; padding: 0 8px; border-radius: 6px;
+  font-size: 13px; font-weight: 500; line-height: 1; white-space: nowrap;
+  background: var(--u-fill); color: var(--u-muted); box-shadow: inset 0 0 0 1px var(--u-line);
+}
+.ui-chip::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; opacity: 0.55; flex: none; }
+.ui-chip--plain::before { display: none; }
+.ui-chip--accent { background: var(--u-tint); color: var(--u-accent-text); box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--u-accent) 22%, transparent); }
+.ui-chip--accent::before { background: var(--u-accent); opacity: 1; }
+.ui-chip--ink { color: var(--u-ink); }
+.ui-chip--ink::before { opacity: 1; }
+.ui-chip--live::before { animation: ui-live 1.6s var(--u-ease) infinite; }
+.ui-chip svg { width: 12px; height: 12px; margin: 0 -1px 0 -2px; }
+.ui-chip:has(svg)::before { display: none; }
+@keyframes ui-live { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+
+.ui-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--u-accent); flex: none; }
+.ui-kbd {
+  display: inline-grid; place-items: center; min-width: 20px; height: 20px; padding: 0 5px; border-radius: 5px;
+  font: 500 13px/1 var(--ui-font, inherit); color: var(--u-muted);
+  background: var(--u-bg); box-shadow: inset 0 0 0 1px var(--u-line-2), inset 0 -1px 0 var(--u-line);
+}
+.ui-icon { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+
+/* people: initials on a quiet tone, five tones that never reach violet */
+.ui-avatar {
+  --h: 60;
+  display: grid; place-items: center; flex: none;
+  width: 24px; height: 24px; border-radius: 50%;
+  font-size: 13px; font-weight: 600; line-height: 1; letter-spacing: -0.02em;
+  background: color-mix(in oklab, oklch(0.74 0.08 var(--h)) 34%, var(--u-bg));
+  color: color-mix(in oklab, oklch(0.5 0.09 var(--h)) 70%, var(--u-ink));
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, oklch(0.6 0.08 var(--h)) 22%, transparent);
+}
+.ui-avatar[data-tone="1"] { --h: 40; }
+.ui-avatar[data-tone="2"] { --h: 85; }
+.ui-avatar[data-tone="3"] { --h: 150; }
+.ui-avatar[data-tone="4"] { --h: 220; }
+.ui-avatar[data-tone="5"] { --h: 20; }
+.ui-avatar--md { width: 32px; height: 32px; font-size: 13px; }
+.ui-avatar--accent { background: var(--u-accent); color: var(--u-accent-ink); box-shadow: none; }
+
+/* skeleton lines for the parts of a window that are only context */
+.ui-skel { display: block; height: 6px; border-radius: 3px; background: var(--u-skel); }
+
+@keyframes ui-spin { to { transform: rotate(360deg); } }
+.ui-spin {
+  display: inline-block; width: 12px; height: 12px; border-radius: 50%; flex: none;
+  border: 1.5px solid color-mix(in oklab, currentColor 30%, transparent); border-top-color: currentColor;
+  animation: ui-spin 700ms linear infinite;
+}
+
+/* ---------------------------------------------------------------- held, paused */
+/* a fragment held on its finished picture (data-ui-still, its cycles done) shows nothing that moves:
+   no caret, spinner or pulse runs on in a still picture */
+.is-ui-held, .is-ui-held *, .is-ui-held *::before, .is-ui-held *::after { animation: none !important; }
+.is-ui-paused, .is-ui-paused *, .is-ui-paused *::before, .is-ui-paused *::after { animation-play-state: paused !important; }
+
+/* the pause button ui.loop puts by a looping fragment (and an object from assets/objects, as
+   .loop-pause): a solid disc in the page colours (never a see-through blur), 32px in a 44px hit area,
+   the same as components' .cx-pause and system.css. In a card it sits beside the title (ui.js sets its
+   top and right; the title keeps 44px clear), in a panel outside a card 12px in from the bottom-right
+   corner, and with no panel under the fragment, in 44px kept free below it. */
+button.ui-pause.ui-pause, button.loop-pause {
+  position: absolute; right: 12px; bottom: 12px; z-index: 6; display: grid; place-items: center;
+  width: 32px; height: 32px; margin: 0; padding: 0; border-radius: 50%; cursor: pointer;
+  border: 1px solid color-mix(in oklab, var(--ink, #111) 16%, transparent);
+  background: var(--bg, #fff); color: var(--ink, #111);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.12), 0 4px 12px -4px rgb(0 0 0 / 0.28);
+  opacity: 0.88; transition: opacity 200ms ease, border-color 200ms ease;
+  -webkit-tap-highlight-color: transparent;
+}
+button.ui-pause.ui-pause--title { bottom: auto; box-shadow: none; opacity: 1; }
+button.ui-pause.ui-pause--below { right: 0; bottom: 6px; box-shadow: none; }
+.ui-pause-beside { padding-right: 44px; }
+button:is(.ui-pause, .loop-pause)::before { content: ""; position: absolute; inset: -6px; border-radius: 50%; }
+button:is(.ui-pause, .loop-pause):is(:hover, :focus-visible) { opacity: 1; border-color: color-mix(in oklab, var(--ink, #111) 32%, transparent); }
+button:is(.ui-pause, .loop-pause):focus-visible { outline: 2px solid var(--ink, #111); outline-offset: 2px; }
+button:is(.ui-pause, .loop-pause) svg { display: block; width: 14px; height: 14px; fill: currentColor; }
+button:is(.ui-pause, .loop-pause).is-paused svg, button.loop-pause[aria-pressed="true"] svg { margin-left: 1px; }
+@media (forced-colors: active) { button.ui-pause.ui-pause, button.loop-pause { border-color: ButtonText; } }
+
+@media (prefers-reduced-motion: reduce) {
+  :where(.ui) *, :where(.ui) *::before, :where(.ui) *::after { transition-duration: 0ms !important; animation: none !important; }
+  button.ui-pause.ui-pause, button.loop-pause { display: none; }
+}
+
+/* ---------------------------------------------------------------- window */
+.ui-win { width: 600px; overflow: hidden; }
+.ui-win__bar { display: flex; align-items: center; gap: 14px; height: 44px; padding: 0 12px 0 14px; border-bottom: 1px solid var(--u-line); background: var(--u-fill); min-width: 0; }
+/* the breadcrumb gives way first (an ellipsis), so the search box at the right is never pushed out or cut */
+.ui-win__crumb { display: inline-flex; align-items: center; gap: 8px; min-width: 0; flex: 0 1 auto; overflow: hidden; font-size: 13px; line-height: 16px; color: var(--u-muted); white-space: nowrap; }
+.ui-win__crumb b { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.ui-win__crumb .ui-brand, .ui-win__crumb i { flex: none; }
+.ui-win__crumb .ui-brand { width: 14px; height: 14px; }
+.ui-win__crumb i { font-style: normal; color: var(--u-muted); }
+.ui-win__crumb b { font-weight: 500; color: var(--u-ink); }
+.ui-win__search { display: inline-flex; flex: none; align-items: center; gap: 8px; height: 28px; width: 168px; padding: 0 4px 0 8px; border-radius: 7px; background: var(--u-bg); box-shadow: inset 0 0 0 1px var(--u-line-2); font-size: 13px; color: var(--u-soft); }
+.ui-win__search .ui-icon { width: 14px; height: 14px; color: var(--u-muted); }
+.ui-win__search .ui-kbd { margin-left: auto; min-width: 20px; height: 20px; font-size: 13px; }
+.ui-win__body { display: grid; grid-template-columns: 152px 1fr; min-height: 312px; }
+.ui-win__side { display: grid; align-content: start; gap: 1px; padding: 8px; border-right: 1px solid var(--u-line); }
+.ui-win__nav {
+  display: flex; align-items: center; gap: 8px; height: 30px; padding: 0 8px; border-radius: 6px;
+  font-size: 13px; line-height: 16px; color: var(--u-muted);
+}
+.ui-win__nav .ui-icon { width: 14px; height: 14px; }
+.ui-win__nav em { margin-left: auto; font-style: normal; font-size: 13px; color: var(--u-soft); }
+.ui-win__nav.is-on { background: var(--u-fill-2); color: var(--u-ink); font-weight: 500; }
+.ui-win__nav.is-on em { color: var(--u-muted); }
+.ui-win__label { margin: 12px 8px 4px; font-size: 13px; line-height: 16px; color: var(--u-soft); }
+.ui-win__hash { width: 14px; text-align: center; color: var(--u-soft); }
+.ui-win__main { min-width: 0; }
+.ui-win__cols, .ui-win__row { display: grid; grid-template-columns: 24px 92px minmax(0, 1fr) 96px 28px; align-items: center; gap: 0 12px; padding: 0 16px; }
+.ui-win__cols { height: 32px; border-bottom: 1px solid var(--u-line); font-size: 13px; line-height: 16px; color: var(--u-soft); }
+.ui-win__cols span:first-child { grid-column: 1 / 3; }
+.ui-win__row { height: 44px; font-size: 13px; line-height: 16px; transition: background-color 260ms var(--u-ease); }
+.ui-win__row + .ui-win__row { box-shadow: inset 0 1px 0 var(--u-line); }
+.ui-win__row.is-sel { background: color-mix(in oklab, var(--u-ink) 4%, var(--u-bg)); }
+.ui-win__row .ui-avatar { width: 24px; height: 24px; }
+.ui-win__who { font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ui-win__sub { color: var(--u-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ui-win__age { color: var(--u-soft); text-align: right; font-size: 13px; }
+.ui-win__st {
+  display: inline-flex; align-items: center; gap: 6px; justify-self: start; height: 22px; padding: 0 8px; border-radius: 6px;
+  font-size: 13px; font-weight: 500; white-space: nowrap; color: var(--u-muted); box-shadow: inset 0 0 0 1px var(--u-line-2);
+  transition: color 240ms var(--u-ease), background-color 240ms var(--u-ease), box-shadow 240ms var(--u-ease);
+}
+.ui-win__st::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; opacity: 0.6; flex: none; }
+/* the row being worked on is the window's one accent touch */
+.ui-win__st.is-work { color: var(--u-accent-text); background: var(--u-tint); box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--u-accent) 22%, transparent); }
+.ui-win__st.is-work::before { width: 8px; height: 8px; background: none; border: 1.5px solid color-mix(in oklab, currentColor 30%, transparent); border-top-color: currentColor; opacity: 1; animation: ui-spin 800ms linear infinite; }
+.ui-win__st.is-done { color: var(--u-soft); box-shadow: inset 0 0 0 1px var(--u-line); }
+.ui-win__st.is-you { color: var(--u-ink); box-shadow: inset 0 0 0 1px var(--u-line-2); background: var(--u-fill-2); }
+.ui-win__st.is-you::before { background: var(--u-ink); opacity: 1; }
+/* compact (opts.compact): a narrower window whose rows stack name over subject, for a card panel
+   where the whole width must show; the status stays in view */
+.ui-win--compact { width: 456px; }
+.ui-win--compact .ui-win__body { grid-template-columns: 128px 1fr; }
+.ui-win--compact .ui-win__search { width: 112px; }
+.ui-win--compact .ui-win__cols { display: none; }
+.ui-win--compact .ui-win__row { grid-template-columns: 24px minmax(0, 1fr) auto; grid-template-rows: 18px 16px; align-content: center; height: 56px; row-gap: 1px; padding: 0 14px; }
+.ui-win--compact .ui-win__row .ui-avatar { grid-row: 1 / 3; }
+.ui-win--compact .ui-win__who { grid-column: 2; grid-row: 1; line-height: 18px; }
+.ui-win--compact .ui-win__sub { grid-column: 2; grid-row: 2; font-size: 13px; }
+.ui-win--compact .ui-win__st { grid-column: 3; grid-row: 1 / 3; align-self: center; }
+.ui-win--compact .ui-win__age { display: none; }
+/* narrow: the window's own width decides its layout (a container query), so a .fit wrapper, a small
+   card at 1024 or a phone panel never slices its columns:
+   - under 540px the rows stack name over subject, the column heads and the age go (the compact rows);
+   - under 420px the sidebar goes too and the search shrinks to its icon. */
+.ui-win { container: ui-win / inline-size; }
+@container ui-win (max-width: 539px) {
+  .ui-win .ui-win__cols { display: none; }
+  .ui-win .ui-win__row { grid-template-columns: 24px minmax(0, 1fr) auto; grid-template-rows: 18px 16px; align-content: center; height: 56px; row-gap: 1px; padding: 0 14px; }
+  .ui-win .ui-win__row .ui-avatar { grid-row: 1 / 3; }
+  .ui-win .ui-win__who { grid-column: 2; grid-row: 1; line-height: 18px; }
+  .ui-win .ui-win__sub { grid-column: 2; grid-row: 2; font-size: 13px; }
+  .ui-win .ui-win__st { grid-column: 3; grid-row: 1 / 3; align-self: center; }
+  .ui-win .ui-win__age { display: none; }
+  .ui-win .ui-win__body { grid-template-columns: 128px minmax(0, 1fr); }
+  .ui-win .ui-win__search { width: 112px; }
+}
+@container ui-win (max-width: 419px) {
+  .ui-win .ui-win__body { grid-template-columns: minmax(0, 1fr); }
+  .ui-win .ui-win__side { display: none; }
+  .ui-win .ui-win__search { width: 28px; padding: 0; justify-content: center; gap: 0; }
+  .ui-win .ui-win__search :is(.ui-kbd, .ui-win__ph) { display: none; }
+  .ui-win .ui-win__row { gap: 0 10px; padding: 0 12px; }
+  .ui-win .ui-win__bar { gap: 10px; padding: 0 8px 0 12px; }
+}
+/* very narrow: the window dots go too, the crumb keeps its last word */
+@container ui-win (max-width: 299px) {
+  .ui-win .ui-dots { display: none; }
+}
+/* phone: the window takes the panel's width (cards.css); the queries above lay it out */
+@media (max-width: 639px) {
+  .ui-win, .ui-win--compact { width: 100%; }
+}
+
+/* ---------------------------------------------------------------- checklist */
+.ui-checks { width: 340px; padding-bottom: 8px; }
+.ui-checks__head { display: flex; align-items: center; height: 48px; padding: 0 16px; }
+.ui-checks__bar { position: relative; height: 4px; margin: 0 16px 8px; border-radius: 2px; background: var(--u-line); overflow: hidden; }
+.ui-checks__bar i { position: absolute; inset: 0; border-radius: 2px; background: var(--u-accent); transform-origin: left; transform: scaleX(var(--k, 0)); transition: transform 500ms var(--u-ease); }
+.ui-check { display: flex; align-items: center; gap: 12px; height: 40px; padding: 0 16px; font-size: 13px; line-height: 20px; }
+.ui-check__box {
+  display: grid; place-items: center; flex: none; width: 18px; height: 18px; border-radius: 50%;
+  box-shadow: inset 0 0 0 1.5px var(--u-line-2); color: var(--u-bg);
+  transition: background-color 240ms var(--u-ease), box-shadow 240ms var(--u-ease), transform 300ms var(--u-spring);
+}
+.ui-check__box svg { width: 12px; height: 12px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+.ui-check__box path { stroke-dasharray: 12; stroke-dashoffset: 12; transition: stroke-dashoffset 300ms var(--u-ease) 80ms; }
+.ui-check__label { position: relative; transition: color 300ms var(--u-ease); }
+.ui-check__label::after {
+  content: ""; position: absolute; left: 0; right: 0; top: 50%; height: 1px; background: currentColor;
+  transform: scaleX(0); transform-origin: left; transition: transform 360ms var(--u-ease) 120ms;
+}
+.ui-check.is-done .ui-check__box { background: var(--u-ink); box-shadow: none; }
+/* the bar is the one accent; the step that ticks is the ink, a little larger for a moment */
+.ui-check.is-now .ui-check__box { background: var(--u-ink); color: var(--u-bg); }
+.ui-check.is-done .ui-check__box path { stroke-dashoffset: 0; }
+.ui-check.is-done .ui-check__label { color: var(--u-muted); }
+.ui-check.is-done .ui-check__label::after { transform: scaleX(1); }
+.ui-check.is-now .ui-check__box { transform: scale(1.12); }
+.ui-checks.is-reset * { transition-duration: 200ms !important; transition-delay: 0ms !important; }
+@media (max-width: 360px) { .ui-checks { width: 100%; } }
+
+/* ---------------------------------------------------------------- notify */
+.ui-notify { width: 380px; }
+.ui-notify__list { position: relative; display: grid; gap: 8px; }
+.ui-note {
+  display: flex; align-items: center; gap: 12px; height: 64px; padding: 0 14px 0 12px;
+  border-radius: var(--u-r); background: var(--u-bg); border: 1px solid var(--u-border);
+  box-shadow: var(--u-shadow-sm);
+  transition: transform 520ms var(--u-ease), opacity 360ms var(--u-ease);
+}
+.ui-note:first-child { box-shadow: var(--u-shadow); }
+.ui-note__av { width: 32px; height: 32px; font-size: 13px; }
+.ui-note__ico { display: grid; place-items: center; flex: none; width: 32px; height: 32px; border-radius: 50%; background: var(--u-fill-2); color: var(--u-muted); box-shadow: inset 0 0 0 1px var(--u-line); }
+.ui-note__ico svg { width: 16px; height: 16px; }
+.ui-note__text { display: grid; flex: 1; min-width: 0; }
+.ui-note__title { display: flex; align-items: baseline; gap: 8px; font-size: 13px; font-weight: 500; line-height: 20px; white-space: nowrap; }
+.ui-note__title time { margin-left: auto; font-size: 13px; font-weight: 400; color: var(--u-soft); }
+.ui-note__body { font-size: 13px; line-height: 16px; color: var(--u-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ui-note__btn { margin-left: 4px; }
+.ui-note:has(.ui-note__btn) .ui-note__title time { display: none; }
+.ui-note.is-enter { opacity: 0; transform: translateY(-14px) scale(0.98); }
+.ui-note.is-leave { opacity: 0; transform: translateY(8px) scale(0.98); }
+/* phone: the stack takes the panel's width (cards.css) and a long line wraps instead of being cut */
+@media (max-width: 639px) {
+  .ui-note { height: auto; min-height: 64px; padding: 12px 12px 12px 12px; align-items: flex-start; }
+  .ui-note__av, .ui-note__ico { margin-top: 2px; }
+  .ui-note__title, .ui-note__body { white-space: normal; text-wrap: pretty; }
+  .ui-note__btn { align-self: center; }
+}
+
+
+/* ================================================================ page compositions (The Dreamers) */
+
+/* a question's title is longer than its level and topic, so it takes the wider share */
+.ui-win__cols, .ui-win__row { grid-template-columns: 24px minmax(0, 1.25fr) minmax(0, 1fr) 96px 28px; }
+.ui-win__cols span:first-child { grid-column: 1 / 3; }
+.ui-win--fill { width: 100%; }
+
+/* the hero frame: a lit ground that takes the rest of the first screen and fades at its foot */
+.hero-window {
+  position: relative; overflow: hidden; isolation: isolate; flex: 1 1 0;
+  min-height: clamp(220px, 32svh, 340px); margin-top: 32px; border-radius: 8px;
+  background: var(--ground-bg);
+  -webkit-mask-image: linear-gradient(to bottom, #000 82%, transparent);
+  mask-image: linear-gradient(to bottom, #000 82%, transparent);
+  --fx-bg: var(--ground-bg); --fx-surface: var(--ground-surface); --fx-ink: var(--ground-ink);
+  --fx-muted: var(--ground-muted); --fx-accent: var(--ground-accent); --fx-accent-ink: var(--ground-surface);
+}
+.hero-window > .hero-window__piece {
+  position: absolute; z-index: 1; left: 50%; top: 32px;
+  width: min(880px, calc(100% - 64px)); transform: translateX(-50%);
+}
+.hero-window > .hero-window__piece > .ui { width: 100%; }
+@media (max-width: 639px) {
+  .hero-window {
+    margin-top: 32px; min-height: 240px;
+    -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 28px), transparent);
+    mask-image: linear-gradient(to bottom, #000 calc(100% - 28px), transparent);
+  }
+  .hero-window > .hero-window__piece { top: 16px; width: calc(100% - 32px); left: 16px; transform: none; }
+  .hero-window .crumb-up { display: none; }
+}
+
+/* the app frame: search results beside the open question */
+.app-frame {
+  display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+  background: var(--u-bg); border: 1px solid var(--u-border); border-radius: var(--u-r); box-shadow: var(--u-shadow);
+  overflow: hidden;
+}
+.app-frame > .app-frame__pane { position: relative; min-width: 0; min-height: 0; overflow: hidden; }
+.app-frame > .app-frame__pane + .app-frame__pane { border-left: 1px solid var(--u-line); }
+.app-frame > .app-frame__pane > .ui-panel { width: 100%; border: 0; border-radius: 0; box-shadow: none; }
+.app-frame > .app-frame__pane::after {
+  content: ""; position: absolute; inset: auto 0 0 0; height: 64px;
+  background: linear-gradient(transparent, var(--u-bg)); pointer-events: none;
+}
+@media (min-width: 1024px) and (max-width: 1279px) { .app-frame { grid-template-columns: minmax(0, 4fr) minmax(0, 8fr); } }
+@media (max-width: 1023px) {
+  .app-frame { grid-template-columns: minmax(0, 1fr); }
+  .app-frame > .app-frame__pane--list { max-height: 252px; }
+  .app-frame > .app-frame__pane--list::after { display: none; }
+  .app-frame .ui-win__side { display: none; }
+  .app-frame .ui-win__body { grid-template-columns: minmax(0, 1fr); }
+  .app-frame > .app-frame__pane + .app-frame__pane { border-left: 0; border-top: 1px solid var(--u-line); }
+}
+@media (max-width: 639px) {
+  .app-frame > .app-frame__pane--list { display: none; }
+  .app-frame > .app-frame__pane + .app-frame__pane { border-top: 0; }
+}
+
+/* the open question: who asks it, and how often */
+.qd { display: grid; align-content: start; gap: 16px; padding: 20px 24px; }
+.qd__head { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.qd__head .ui-title { font-size: 16px; white-space: normal; }
+.qd__tags, .qd__acts { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.qd__label { font-size: 13px; color: var(--u-muted); }
+.qd__rows { list-style: none; margin: 0; padding: 0; display: grid; }
+.qd__rows li {
+  display: grid; grid-template-columns: 24px minmax(0, 9rem) minmax(0, 1fr) 40px; align-items: center; gap: 12px;
+  height: 44px; border-top: 1px solid var(--u-line); font-size: 13px;
+}
+.qd__rows li > .qd__v { text-align: right; color: var(--u-muted); font-family: var(--ui-mono); font-size: 12px; }
+.qd__bar { height: 6px; border-radius: 99px; background: var(--u-fill-2); overflow: hidden; }
+.qd__bar > i { display: block; height: 100%; width: calc(var(--v) * 100%); border-radius: inherit; background: color-mix(in oklab, var(--u-ink) 55%, var(--u-bg)); }
+.qd__rows li:first-child .qd__bar > i { background: var(--u-accent); }
+.qd .ui-chip--accent { transition: opacity 300ms var(--u-ease), transform 300ms var(--u-ease); }
+.qd:not(.is-saved) .qd__saved { opacity: 0; transform: translateY(2px); }
+
+/* a feature card's visual: the lit ground with an effect behind one fragment */
+.panel {
+  --p-h: clamp(264px, 22vw + 8px, 340px);
+  position: relative; isolation: isolate; overflow: hidden; min-height: var(--p-h);
+  background: var(--ground-bg);
+}
+.panel::after { content: ""; position: absolute; inset: 0; z-index: 2; pointer-events: none; box-shadow: inset 0 1px 0 color-mix(in oklab, var(--ink) 7%, transparent); }
+.stage { position: absolute; inset: 0; z-index: 1; }
+.stage-fade-b {
+  -webkit-mask: linear-gradient(to bottom, #000 calc(100% - 64px), transparent calc(100% - 4px));
+  mask: linear-gradient(to bottom, #000 calc(100% - 64px), transparent calc(100% - 4px));
+}
+
+/* the compare diagram: two lists and the questions both of them ask */
+.dg { --fx-accent: var(--ground-accent); position: absolute; inset: 0; display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 0; padding: 0 24px; }
+.dg__list { position: relative; z-index: 1; font-size: 13px; }
+.dg__list .ui-head { height: 40px; padding: 0 12px; gap: 8px; }
+.dg__list .ui-head svg { width: 16px; height: 16px; }
+.dg__list .ui-meta { font-family: var(--ui-mono); font-size: 12px; }
+.dg__row { display: flex; align-items: center; justify-content: space-between; gap: 12px; height: 30px; padding: 0 12px; }
+.dg__row + .dg__row { box-shadow: inset 0 1px 0 var(--u-line); }
+.dg__row > span:first-child { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dg__row > span:last-child { font-family: var(--ui-mono); font-size: 12px; color: var(--u-muted); }
+.dg__row.is-on { background: var(--u-fill-2); }
+.dg__row.is-on > span:last-child { color: var(--u-accent-text); }
+.dg__link { position: relative; display: grid; place-items: center; width: 140px; height: 2px; }
+.dg__link::before { content: ""; position: absolute; left: 0; right: 0; top: 50%; height: 1px; background: color-mix(in oklab, var(--ground-ink) 40%, transparent); }
+.dg__pill {
+  position: relative; display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 12px; border-radius: 99px;
+  font-size: 13px; font-weight: 500; white-space: nowrap;
+  background: var(--u-bg); color: var(--u-ink); box-shadow: var(--u-shadow-sm), inset 0 0 0 1px var(--u-border);
+}
+.dg__pill svg { width: 14px; height: 14px; color: var(--ground-accent); }
+@media (max-width: 1279px) { .dg__link { width: 72px; } }
+@media (max-width: 639px) {
+  .dg { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto auto auto; align-content: center; gap: 0; padding: 0 20px; }
+  .dg__link { width: 2px; height: 48px; justify-self: center; }
+  .dg__link::before { left: 50%; right: auto; top: 0; bottom: 0; width: 1px; height: auto; }
+}
+@media (min-width: 1024px) {
+  .app-frame { height: clamp(440px, calc(100svh - 420px), 600px); }
+}

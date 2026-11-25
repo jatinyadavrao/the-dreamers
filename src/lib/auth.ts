@@ -37,3 +37,15 @@ export async function requireAdmin(): Promise<SessionPayload> {
   if (!emailIsAdmin(user.email)) redirect("/");
   return user;
 }
+
+/** A path plus the named query values a page understands (where sign-in should bring the visitor back). */
+export function withQuery(path: string, sp: Record<string, string | string[] | undefined>, keys: string[]): string {
+  const q = new URLSearchParams();
+  for (const k of keys) {
+    const v = sp[k];
+    const one = Array.isArray(v) ? v[0] : v;
+    if (one) q.set(k, one);
+  }
+  const qs = q.toString();
+  return qs ? `${path}?${qs}` : path;
+}

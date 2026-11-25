@@ -1,57 +1,97 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
-import { motion } from "framer-motion";
-import { Building2, Search, ArrowRight } from "lucide-react";
+import { useMemo, useState } from "react";
+import { ArrowUpRight, Search } from "lucide-react";
+import { Monogram } from "@/components/ui/kit";
 import type { CompanyLite } from "@/lib/data";
 
-export function CompanyGrid({ companies }: { companies: CompanyLite[] }) {
+type Sort = "count" | "name" | "progress";
+
+export function CompanyGrid({
+  companies,
+  progress = {},
+}: {
+  companies: CompanyLite[];
+  progress?: Record<string, number>;
+}) {
   const [q, setQ] = useState("");
-  const filtered = companies.filter((c) => c.name.toLowerCase().includes(q.toLowerCase()));
+  const hasProgress = Object.keys(progress).length > 0;
+  const [sort, setSort] = useState<Sort>("count");
+
+  const list = useMemo(() => {
+    const term = q.trim().toLowerCase();
+    const f = companies.filter((c) => !term || c.name.toLowerCase().includes(term) || c.slug.includes(term));
+    if (sort === "name") return [...f].sort((a, b) => a.name.localeCompare(b.name));
+    if (sort === "progress")
+      return [...f].sort(
+        (a, b) =>
+          (progress[b.slug] ?? 0) / Math.max(1, b.questionCount) - (progress[a.slug] ?? 0) / Math.max(1, a.questionCount) ||
+          b.questionCount - a.questionCount
+      );
+    return f;
+  }, [companies, q, sort, progress]);
+
+  const tabs: { key: Sort; label: string }[] = [
+    { key: "count", label: "Most questions" },
+    { key: "name", label: "A to Z" },
+    ...(hasProgress ? [{ key: "progress" as const, label: "Your progress" }] : []),
+  ];
 
   return (
     <div>
-      <div className="relative mx-auto mb-8 max-w-md">
-        <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--muted)]" />
-        <input
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-          placeholder="Search companies…"
-          className="w-full rounded-2xl border border-[var(--border)] bg-[var(--card)] py-3 pl-11 pr-4 outline-none focus:border-dream-400"
-        />
+      <div className="mb-6 grid gap-3 sm:flex sm:items-center sm:justify-between">
+        <label className="field sm:w-[360px]">
+          <Search aria-hidden />
+          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search companies" aria-label="Search companies" />
+        </label>
+        <div className="tabs" role="tablist" aria-label="Sort companies">
+          {tabs.map((t) => (
+            <button key={t.key} type="button" role="tab" aria-selected={sort === t.key} onClick={() => setSort(t.key)} className="tab">
+              {t.label}
+            </button>
+          ))}
+        </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-        {filtered.map((c, i) => (
-          <motion.div
-            key={c.slug}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: Math.min(i * 0.02, 0.4) }}
-          >
-            <Link
-              href={`/companies/${c.slug}`}
-              className="glass group flex h-full flex-col justify-between rounded-2xl p-5 transition-all hover:-translate-y-1 hover:border-dream-400/50"
-            >
-              <div className="mb-6 inline-flex w-fit rounded-xl bg-gradient-to-br from-dream-500/20 to-nebula-500/20 p-2.5 text-dream-300">
-                <Building2 className="h-5 w-5" />
-              </div>
-              <div>
-                <h3 className="font-display font-semibold leading-tight">{c.name}</h3>
-                <div className="mt-2 flex items-center justify-between text-xs text-[var(--muted)]">
-                  <span>{c.questionCount} problems</span>
-                  <ArrowRight className="h-3.5 w-3.5 opacity-0 transition-all group-hover:translate-x-1 group-hover:opacity-100" />
-                </div>
-              </div>
-            </Link>
-          </motion.div>
-        ))}
-      </div>
+      <p className="mb-3 text-[13px] text-muted" aria-live="polite">
+        {list.length === companies.length ? `${companies.length} companies` : `${list.length} of ${companies.length} companies`}
+      </p>
 
-      {filtered.length === 0 && (
-        <p className="py-16 text-center text-[var(--muted)]">No companies found.</p>
-      )}
+      <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        {list.map((c) => {
+          const solved = progress[c.slug] ?? 0;
+          const pct = c.questionCount ? Math.min(100, (solved / c.questionCount) * 100) : 0;
+          return (
+            <li key={c.slug}>
+              <Link
+                href={`/companies/${c.slug}`}
+                className="card card-hover group grid h-full grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-3.5 gap-y-3 p-4"
+              >
+                <Monogram name={c.name} slug={c.slug} />
+                <span className="min-w-0">
+                  <span className="block truncate text-[15px] font-medium">{c.name}</span>
+                  <span className="block text-[13px] text-muted">
+                    {c.questionCount.toLocaleString("en-US")} questions
+                    {solved > 0 && <> · {solved} solved</>}
+                  </span>
+                </span>
+                <ArrowUpRight
+                  className="h-4 w-4 text-muted opacity-0 transition-[opacity,transform] duration-150 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:opacity-100"
+                  aria-hidden
+                />
+                {solved > 0 && (
+                  <span className="col-span-3 h-1 overflow-hidden rounded-full bg-[color-mix(in_oklab,var(--ink)_10%,transparent)]" aria-hidden>
+                    <span className="block h-full rounded-full bg-accent" style={{ width: `${Math.max(2, pct)}%` }} />
+                  </span>
+                )}
+              </Link>
+            </li>
+          );
+        })}
+      </ul>
+
+      {list.length === 0 && <p className="py-16 text-center text-muted">No company matches &ldquo;{q}&rdquo;.</p>}
     </div>
   );
 }

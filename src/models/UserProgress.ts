@@ -8,6 +8,8 @@ const UserProgressSchema = new Schema(
     link: { type: String, default: "" },
     difficulty: { type: String, default: "" },
     solved: { type: Boolean, default: false },
+    // when it was marked solved (the dashboard's streak and activity); null when not solved
+    solvedAt: { type: Date, default: null },
     bookmarked: { type: Boolean, default: false },
     note: { type: String, default: "" },
   },

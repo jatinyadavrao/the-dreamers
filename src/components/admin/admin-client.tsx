@@ -1,8 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Building2, ListChecks, Sparkles, User, Shield, Users } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { Building2, ListChecks, Quote, User, Shield, Users } from "lucide-react";
 import type { CompanyLite, ThoughtLite, ProfileLite, UserRow } from "@/lib/data";
 import { CompaniesPanel } from "./companies-panel";
 import { QuestionsPanel } from "./questions-panel";
@@ -14,8 +13,8 @@ const TABS = [
   { key: "users", label: "Users", icon: Users },
   { key: "companies", label: "Companies", icon: Building2 },
   { key: "questions", label: "Questions", icon: ListChecks },
-  { key: "suvichar", label: "Suvichar", icon: Sparkles },
-  { key: "profile", label: "About Me", icon: User },
+  { key: "suvichar", label: "Suvichar", icon: Quote },
+  { key: "profile", label: "About me", icon: User },
 ] as const;
 
 type TabKey = (typeof TABS)[number]["key"];
@@ -37,45 +36,41 @@ export function AdminClient({
   const [companies, setCompanies] = useState(initialCompanies);
 
   return (
-    <div>
-      <div className="mb-8 flex items-center gap-3">
-        <div className="inline-flex rounded-2xl bg-gradient-to-br from-nebula-500/20 to-dream-500/20 p-3 text-nebula-400">
-          <Shield className="h-6 w-6" />
-        </div>
+    <div className="pb-24">
+      <div className="page-in flex items-center gap-4 pt-10 pb-8 lg:pt-14">
+        <span className="grid h-12 w-12 place-items-center rounded-[8px] border border-line bg-surface text-ink">
+          <Shield className="h-5 w-5" aria-hidden />
+        </span>
         <div>
-          <h1 className="font-display text-3xl font-bold">Admin</h1>
-          <p className="text-sm text-[var(--muted)]">Manage everything on The Dreamers.</p>
+          <h1 className="text-[clamp(32px,2vw+22px,44px)] leading-[1.05] tracking-[-0.035em]">Admin</h1>
+          <p className="text-[15px] text-muted">Manage companies, questions, Suvichar and the About page.</p>
         </div>
       </div>
 
-      <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <StatCard label="Total users" value={userStats?.total ?? 0} />
+      <div className="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <StatCard label="Users" value={userStats?.total ?? 0} />
         <StatCard label="Verified users" value={userStats?.verified ?? 0} />
         <StatCard label="Companies" value={companies.length} />
         <StatCard label="Thoughts" value={initialThoughts.length} />
       </div>
 
-      <div className="mb-8 flex flex-wrap gap-2">
+      <div className="tabs mb-8" role="tablist" aria-label="Admin sections">
         {TABS.map((t) => (
           <button
             key={t.key}
+            type="button"
+            role="tab"
+            aria-selected={tab === t.key}
             onClick={() => setTab(t.key)}
-            className={cn(
-              "flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition-colors",
-              tab === t.key
-                ? "border-dream-400 bg-dream-500/15 text-dream-300"
-                : "border-[var(--border)] text-[var(--muted)] hover:border-dream-400/50"
-            )}
+            className="tab"
           >
-            <t.icon className="h-4 w-4" /> {t.label}
+            <t.icon className="h-4 w-4" aria-hidden /> {t.label}
           </button>
         ))}
       </div>
 
       {tab === "users" && <UsersPanel users={users} />}
-      {tab === "companies" && (
-        <CompaniesPanel companies={companies} setCompanies={setCompanies} />
-      )}
+      {tab === "companies" && <CompaniesPanel companies={companies} setCompanies={setCompanies} />}
       {tab === "questions" && <QuestionsPanel companies={companies} />}
       {tab === "suvichar" && <ThoughtsPanel initial={initialThoughts} />}
       {tab === "profile" && <ProfilePanel initial={initialProfile} />}
@@ -85,9 +80,9 @@ export function AdminClient({
 
 function StatCard({ label, value }: { label: string; value: number }) {
   return (
-    <div className="glass rounded-2xl p-4 text-center">
-      <div className="font-display text-3xl font-bold text-gradient">{value}</div>
-      <div className="mt-1 text-xs text-[var(--muted)]">{label}</div>
+    <div className="card grid gap-2 p-5">
+      <div className="text-[14px] text-muted">{label}</div>
+      <div className="text-[30px] leading-none font-medium tracking-[-0.03em]">{value.toLocaleString("en-US")}</div>
     </div>
   );
 }

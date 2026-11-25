@@ -1,12 +1,15 @@
 import { Suspense } from "react";
 import { VerifyForm } from "@/components/verify-form";
+import { AuthAside, AuthShell } from "@/components/auth-shell";
 
-export const metadata = { title: "Verify email · The Dreamers" };
+export const metadata = { title: "Verify your email" };
 
-export default function VerifyPage() {
+export default function Page() {
   return (
-    <Suspense>
-      <VerifyForm />
-    </Suspense>
+    <AuthShell aside={<AuthAside />}>
+      <Suspense>
+        <VerifyForm />
+      </Suspense>
+    </AuthShell>
   );
 }

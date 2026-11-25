@@ -2,14 +2,14 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { motion } from "framer-motion";
-import { Sparkles, MailCheck, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
+import { safeNext } from "@/lib/utils";
 
 export function VerifyForm() {
   const router = useRouter();
   const sp = useSearchParams();
   const email = sp.get("email") || "";
-  const next = sp.get("next") || "/companies";
+  const next = safeNext(sp.get("next"));
 
   const [code, setCode] = useState("");
   const [error, setError] = useState("");
@@ -62,57 +62,54 @@ export function VerifyForm() {
   }
 
   return (
-    <section className="mx-auto flex min-h-[80vh] max-w-md flex-col justify-center px-6 py-12">
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="glass rounded-3xl p-8">
-        <div className="mb-6 flex items-center justify-center gap-2">
-          <Sparkles className="h-5 w-5 text-dream-400" />
-          <span className="font-display text-lg font-bold text-gradient">The Dreamers</span>
-        </div>
+    <div>
+      <h1 className="text-[clamp(32px,1.6vw+24px,44px)] leading-[1.05] tracking-[-0.035em]">Check your email</h1>
+      <p className="mt-3 text-[16px] text-ink-soft">
+        We sent a 6-digit code to <span className="font-medium text-ink">{email || "your email"}</span>. It expires in 10
+        minutes.
+      </p>
 
-        <div className="mb-4 flex justify-center">
-          <div className="rounded-2xl bg-gradient-to-br from-dream-500/20 to-nebula-500/20 p-3 text-dream-300">
-            <MailCheck className="h-7 w-7" />
-          </div>
-        </div>
-
-        <h1 className="text-center font-display text-2xl font-bold">Verify your email</h1>
-        <p className="mt-1 text-center text-sm text-[var(--muted)]">
-          We sent a 6-digit code to <span className="text-dream-300">{email}</span>
-        </p>
-
-        <form onSubmit={verify} className="mt-6 space-y-4">
+      <form onSubmit={verify} className="mt-8 grid gap-4">
+        <label className="grid gap-1.5">
+          <span className="text-[14px] font-medium">Verification code</span>
           <input
             inputMode="numeric"
+            autoComplete="one-time-code"
             pattern="\d*"
             maxLength={6}
             required
             value={code}
             onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
-            placeholder="••••••"
-            className="w-full rounded-xl border border-[var(--border)] bg-[var(--card)] py-3 text-center text-2xl font-bold tracking-[0.5em] outline-none focus:border-dream-400"
+            placeholder="000000"
+            className="input h-14 text-center font-mono text-[26px] tracking-[0.5em]"
           />
+        </label>
 
-          {error && <p className="text-center text-sm text-red-400">{error}</p>}
-          {info && <p className="text-center text-sm text-green-400">{info}</p>}
+        {error && (
+          <p role="alert" className="rounded-[4px] border border-[color-mix(in_oklab,var(--danger)_40%,transparent)] bg-[color-mix(in_oklab,var(--danger)_10%,transparent)] px-3 py-2.5 text-[14px]">
+            {error}
+          </p>
+        )}
+        {info && (
+          <p role="status" className="text-[14px] text-good">
+            {info}
+          </p>
+        )}
 
-          <button
-            type="submit"
-            disabled={busy || code.length !== 6}
-            className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-dream-500 to-nebula-500 py-3 font-semibold text-white transition-transform hover:scale-[1.02] disabled:opacity-60"
-          >
-            {busy && <Loader2 className="h-4 w-4 animate-spin" />}
-            Verify
-          </button>
-        </form>
-
-        <button
-          onClick={resend}
-          disabled={cooldown > 0}
-          className="mt-5 w-full text-center text-sm text-[var(--muted)] hover:text-dream-300 disabled:opacity-60"
-        >
-          {cooldown > 0 ? `Resend code in ${cooldown}s` : "Didn't get it? Resend code"}
+        <button type="submit" disabled={busy || code.length !== 6} className="btn btn-primary h-12 w-full">
+          {busy && <Loader2 className="h-4 w-4 animate-spin" aria-hidden />}
+          Verify and continue
         </button>
-      </motion.div>
-    </section>
+      </form>
+
+      <button
+        type="button"
+        onClick={resend}
+        disabled={cooldown > 0}
+        className="mt-6 text-[14px] text-muted underline-offset-4 hover:text-ink hover:underline disabled:no-underline disabled:hover:text-muted"
+      >
+        {cooldown > 0 ? `Resend the code in ${cooldown}s` : "Didn't get it? Resend the code"}
+      </button>
+    </div>
   );
 }

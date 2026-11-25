@@ -1,13 +1,16 @@
 import { NextResponse } from "next/server";
-import { isAdmin } from "@/lib/auth";
+import { emailIsAdmin } from "@/lib/auth";
+import { getSession } from "@/lib/session";
+import { RULES, rateLimit } from "@/lib/rate-limit";
 import { connectDB } from "@/lib/db";
 import { Question } from "@/models/Question";
 import { Company } from "@/models/Company";
-import { slugify } from "@/lib/utils";
+import { escapeRegex, slugify } from "@/lib/utils";
 
 async function guard() {
-  if (!(await isAdmin())) return NextResponse.json({ error: "forbidden" }, { status: 403 });
-  return null;
+  const user = await getSession();
+  if (!user || !emailIsAdmin(user.email)) return NextResponse.json({ error: "forbidden" }, { status: 403 });
+  return rateLimit([[RULES.admin, user.userId]]);
 }
 
 async function recount(company: string) {
@@ -24,7 +27,7 @@ export async function GET(req: Request) {
   const q = sp.get("q");
   const filter: Record<string, unknown> = {};
   if (company) filter.company = company;
-  if (q) filter.title = { $regex: q, $options: "i" };
+  if (q) filter.title = { $regex: escapeRegex(q.slice(0, 80)), $options: "i" };
   const docs = await Question.find(filter).sort({ frequency: -1 }).limit(300).lean();
   return NextResponse.json(docs);
 }
