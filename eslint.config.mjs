@@ -12,8 +12,6 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
-    // vendored third-party effects runtime (taste-skill, MIT)
-    "src/lib/fx/**",
   ]),
 ]);
 

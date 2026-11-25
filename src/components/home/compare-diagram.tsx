@@ -1,6 +1,7 @@
-import { FxGround } from "@/components/fx/fx-ground";
+"use client";
 
-const PANEL = { bg: "#cdd6c6", surface: "#dce3d6", ink: "#262d24", accent: "#6c8e63" };
+import { useRef } from "react";
+import { useTicker } from "@/components/fx/use-ticker";
 
 function Building() {
   return (
@@ -13,26 +14,34 @@ function Building() {
   );
 }
 
-/** Two companies' lists and the questions both of them ask, held still on the sage panel. */
+/**
+ * Two companies' lists joined by the questions both ask: the link draws itself in and the shared
+ * rows light up together on both sides, one after another.
+ */
 export function CompareDiagram({
   a,
   b,
   shared,
+  sharedCount,
 }: {
   a: string;
   b: string;
   shared: { title: string; difficulty: string }[];
+  sharedCount?: number;
 }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const { tick, inView } = useTicker(ref, () => 1500);
+  const on = shared.length ? tick % shared.length : 0;
   return (
     <div
-      className="panel"
+      ref={ref}
+      className={`panel ${inView ? "dg-live" : ""}`}
       style={{ ["--p-h" as string]: "336px" }}
       role="img"
-      aria-label={`${a}'s list and ${b}'s list, with the questions both companies ask linked between them`}
+      aria-label={`${a}'s list and ${b}'s list, with the ${sharedCount ?? shared.length} questions both companies ask linked between them`}
     >
-      <FxGround effect="gradient-mesh" palette={PANEL} params={{ drift: 0 }} seed={34} />
       <div className="ui dg" aria-hidden="true">
-        <DiagramList name={a} shared={shared} />
+        <DiagramList name={a} shared={shared} on={on} />
         <div className="dg__link">
           <span className="dg__pill">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -41,16 +50,16 @@ export function CompareDiagram({
               <path d="M13 6h3a2 2 0 0 1 2 2v7" />
               <path d="M11 18H8a2 2 0 0 1-2-2V9" />
             </svg>
-            Both ask
+            Both ask{sharedCount ? ` · ${sharedCount}` : ""}
           </span>
         </div>
-        <DiagramList name={b} shared={shared} />
+        <DiagramList name={b} shared={shared} on={on} />
       </div>
     </div>
   );
 }
 
-function DiagramList({ name, shared }: { name: string; shared: { title: string; difficulty: string }[] }) {
+function DiagramList({ name, shared, on }: { name: string; shared: { title: string; difficulty: string }[]; on: number }) {
   return (
     <div className="ui ui-panel dg__list">
       <div className="ui-head">
@@ -60,7 +69,7 @@ function DiagramList({ name, shared }: { name: string; shared: { title: string; 
         <span className="ui-meta">List</span>
       </div>
       {shared.map((q, i) => (
-        <div key={q.title} className={`dg__row ${i === 1 ? "is-on" : ""}`}>
+        <div key={q.title} className={`dg__row ${i === on ? "is-on" : ""}`}>
           <span>{q.title}</span>
           <span>{q.difficulty}</span>
         </div>

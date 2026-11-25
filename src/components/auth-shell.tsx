@@ -1,5 +1,4 @@
 import { Logo } from "@/components/brand/logo";
-import { FxGround, SAGE } from "@/components/fx/fx-ground";
 
 /** Sign in, sign up and verify: the form on the page ground, the lit product picture beside it. */
 export function AuthShell({ children, aside }: { children: React.ReactNode; aside?: React.ReactNode }) {
@@ -15,13 +14,7 @@ export function AuthShell({ children, aside }: { children: React.ReactNode; asid
       </div>
       <div className="hidden lg:col-span-7 lg:col-start-6 lg:block xl:col-span-7 xl:col-start-6">
         <div className="frame-lit relative h-full min-h-[560px]">
-          <FxGround
-            effect="painterly-landscape"
-            palette={SAGE}
-            seed={23}
-            params={{ blur: 1, brush: 0.35, slope: 10, hillY: 0.26, horizon: 0.55 }}
-          />
-          <div className="absolute inset-0 z-10 grid content-center justify-items-center p-10">{aside}</div>
+          <div className="absolute inset-0 z-10 grid place-items-center p-10">{aside}</div>
         </div>
       </div>
     </section>
@@ -39,7 +32,19 @@ export function AuthAside() {
   ];
   return (
     <div className="grid w-full max-w-[420px] gap-5" aria-hidden="true">
-      <div className="ui ui-panel ui-checks w-full">
+      <div className="relative">
+      {/* the next list, peeking out behind this one */}
+      <div
+        className="ui ui-panel"
+        style={{ position: "absolute", left: 22, right: 22, top: -14, bottom: 14, opacity: 0.55, transform: "scale(0.97)" }}
+      >
+        <div className="ui-checks__head">
+          <div className="ui-title">Your Google list</div>
+          <span className="ui-spacer" />
+          <div className="ui-meta">9 of 24 solved</div>
+        </div>
+      </div>
+      <div className="ui ui-panel ui-checks" style={{ width: "100%", maxWidth: "none" }}>
         <div className="ui-checks__head">
           <div className="ui-title">Your Amazon list</div>
           <span className="ui-spacer" />
@@ -62,6 +67,7 @@ export function AuthAside() {
             </li>
           ))}
         </ul>
+      </div>
       </div>
       <p className="text-center text-[15px] text-ground-ink">Your ticks follow you to every company list.</p>
     </div>

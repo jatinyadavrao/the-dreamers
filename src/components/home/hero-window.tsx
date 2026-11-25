@@ -1,8 +1,7 @@
 "use client";
 
 import { useRef } from "react";
-import { FxGround, SAGE } from "@/components/fx/fx-ground";
-import { PauseButton } from "@/components/fx/pause-button";
+import { motion, useReducedMotion, useSpring } from "framer-motion";
 import { useTicker } from "@/components/fx/use-ticker";
 import { DifficultyAvatar } from "@/components/home/difficulty-avatar";
 import type { HomeShowcase } from "@/lib/data";
@@ -11,7 +10,7 @@ type Status = "To do" | "Solved" | "Revise";
 const START: Status[] = ["Solved", "Solved", "To do", "To do", "Revise", "To do", "To do"];
 
 /**
- * The hero's product window on the painterly sage ground: a company's most-asked questions, worked
+ * The hero's product window on the dot-terrain stage: a company's most-asked questions, worked
  * down one row at a time (To do -> Solving -> Solved), then the list starts over.
  */
 export function HeroWindow({ data }: { data: HomeShowcase }) {
@@ -20,7 +19,20 @@ export function HeroWindow({ data }: { data: HomeShowcase }) {
   const open = START.slice(0, rows.length)
     .map((s, i) => (s === "To do" ? i : -1))
     .filter((i) => i >= 0);
-  const { tick, paused, setPaused } = useTicker(frame, (t) => (t % 2 === 0 ? 1500 : 900));
+  const { tick } = useTicker(frame, (t) => (t % 2 === 0 ? 1500 : 900));
+  const reduced = useReducedMotion();
+  const rx = useSpring(0, { stiffness: 110, damping: 18, mass: 0.6 });
+  const ry = useSpring(0, { stiffness: 110, damping: 18, mass: 0.6 });
+  const lean = (e: React.PointerEvent) => {
+    if (reduced || e.pointerType !== "mouse") return;
+    const b = e.currentTarget.getBoundingClientRect();
+    ry.set(((e.clientX - b.left) / b.width - 0.5) * 7);
+    rx.set(-((e.clientY - b.top) / b.height - 0.5) * 5);
+  };
+  const settle = () => {
+    rx.set(0);
+    ry.set(0);
+  };
   // step j: the first j open rows are solved, open row j is being solved; j = 0 is the list as written
   const j = tick % (open.length + 1);
 
@@ -40,19 +52,15 @@ export function HeroWindow({ data }: { data: HomeShowcase }) {
     <div
       ref={frame}
       className="hero-window enter-settle"
+      onPointerMove={lean}
+      onPointerLeave={settle}
     >
-      <FxGround
-        effect="painterly-landscape"
-        palette={SAGE}
-        seed={7}
-        params={{ blur: 1, brush: 0.35, slope: 0, hillY: 0.3, horizon: 0.62 }}
-      />
       <div
         className="hero-window__piece"
         role="img"
         aria-label={`The Dreamers showing ${company}'s questions sorted by how often each is asked, with the solved ones ticked off`}
       >
-        <div className="ui ui-panel ui-win">
+        <motion.div className="ui ui-panel ui-win" style={{ rotateX: rx, rotateY: ry, transformPerspective: 1400 }}>
           <div className="ui-win__bar">
             <span className="ui-dots">
               <i />
@@ -120,9 +128,8 @@ export function HeroWindow({ data }: { data: HomeShowcase }) {
               </ul>
             </div>
           </div>
-        </div>
+        </motion.div>
       </div>
-      <PauseButton paused={paused} onToggle={() => setPaused((p) => !p)} className="absolute top-3 right-3 max-sm:top-auto max-sm:bottom-10" />
     </div>
   );
 }

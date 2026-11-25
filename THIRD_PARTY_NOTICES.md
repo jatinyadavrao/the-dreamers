@@ -1,3 +1,11 @@
+# Third-party notices
+
+## taste-skill
+
+The product-UI fragment styles in `src/app/kit.css` (window, checklist, notification stack) are ported
+from taste-skill, https://github.com/leonxlnx/taste-skill.
+
+```
 MIT License
 
 Copyright (c) 2026 Leonxlnx
@@ -19,3 +27,8 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+```
+
+## Simple Icons
+
+The social marks in `src/components/ui/social-icons.tsx` are from Simple Icons (https://simpleicons.org), CC0 1.0.

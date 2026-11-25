@@ -114,7 +114,7 @@ function DailyCard({ q, onOpen, companyName }: { q: ExploreQuestion; onOpen: () 
 
   return (
     <section id="daily" aria-labelledby="daily-h" className="frame-lit @container scroll-mt-24 p-6 sm:p-8">
-      <div className="grid gap-6 @4xl:grid-cols-[minmax(0,1fr)_auto] @4xl:items-end">
+      <div className="relative z-10 grid gap-6 @4xl:grid-cols-[minmax(0,1fr)_auto] @4xl:items-end">
         <div className="grid gap-3">
           <div className="flex flex-wrap items-center gap-3 text-[14px] text-ground-muted">
             <span id="daily-h" className="font-medium text-ground-ink">
@@ -137,7 +137,7 @@ function DailyCard({ q, onOpen, companyName }: { q: ExploreQuestion; onOpen: () 
         <div className="grid gap-3 @lg:flex @lg:flex-wrap @lg:items-center">
           {isSignedIn && (
             <span className="inline-flex items-center gap-2 text-[14px] text-ground-ink">
-              <Flame className={cn("h-4 w-4", s.today ? "text-[#c2410c]" : "text-ground-muted")} aria-hidden />
+              <Flame className={cn("h-4 w-4", s.today ? "text-brand" : "text-ground-muted")} aria-hidden />
               {s.current > 0 ? `${s.current}-day streak` : "Start a streak today"}
             </span>
           )}
@@ -154,7 +154,7 @@ function DailyCard({ q, onOpen, companyName }: { q: ExploreQuestion; onOpen: () 
             href={q.link}
             target="_blank"
             rel="noopener noreferrer"
-            className="btn h-11 bg-ground-ink text-ground-surface hover:bg-[color-mix(in_oklab,var(--ground-ink)_88%,var(--ground-bg))]"
+            className="btn btn-stage h-11"
           >
             Solve on LeetCode
             <ExternalLink className="h-4 w-4" aria-hidden />

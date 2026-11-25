@@ -1,19 +1,15 @@
 "use client";
 
 import { useRef } from "react";
-import { FxGround } from "@/components/fx/fx-ground";
-import { PauseButton } from "@/components/fx/pause-button";
 import { useTicker } from "@/components/fx/use-ticker";
 
-const PANEL = { bg: "#cdd6c6", surface: "#dce3d6", ink: "#262d24", accent: "#6c8e63" };
-
 /** A company list whose open items tick one after another while the bar fills, then starts over. */
-export function ChecklistCard({ company, items, seed = 21 }: { company: string; items: string[]; seed?: number }) {
+export function ChecklistCard({ company, items }: { company: string; items: string[] }) {
   const ref = useRef<HTMLDivElement>(null);
   const start = Math.min(2, items.length);
   const left = Math.max(1, items.length - start);
   // one step per item, a hold on all done, then a quick reset
-  const { tick, paused, setPaused } = useTicker(ref, (t) => {
+  const { tick } = useTicker(ref, (t) => {
     const s = t % (left + 2);
     if (s === left) return 1400;
     if (s === left + 1) return 500;
@@ -25,7 +21,6 @@ export function ChecklistCard({ company, items, seed = 21 }: { company: string; 
 
   return (
     <div ref={ref} className="panel" style={{ ["--p-h" as string]: "336px" }}>
-      <FxGround effect="gradient-mesh" palette={PANEL} params={{ drift: 0 }} seed={seed} />
       <div
         className="stage stage-fade-b"
         role="img"
@@ -58,7 +53,6 @@ export function ChecklistCard({ company, items, seed = 21 }: { company: string; 
           </div>
         </div>
       </div>
-      <PauseButton paused={paused} onToggle={() => setPaused((p) => !p)} className="absolute top-3 right-3" />
     </div>
   );
 }
