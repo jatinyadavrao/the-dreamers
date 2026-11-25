@@ -1,29 +1,60 @@
-# The Dreamers 🚀
+# The Dreamers
 
-Company-wise LeetCode previous-year questions with progress tracking, a "Daily Suvichar"
-board, and a full admin panel. Built with **Next.js 16 (App Router)**, **MongoDB (Mongoose)**,
-custom **email/password auth** (bcrypt + signed session cookies via `jose`), **Tailwind CSS v4**,
-**Framer Motion**, and **Recharts**.
-
+Company-wise LeetCode previous-year questions with progress tracking, a daily question and streak,
+a daily Suvichar, and an admin panel. Built with **Next.js 16 (App Router)**, **MongoDB (Mongoose)**,
+custom **email/password + Google auth** (bcrypt + signed session cookies via `jose`), **Tailwind CSS v4**
+and **Framer Motion**.
 
 ## Features
 
-- **Email/password accounts** stored in MongoDB (passwords bcrypt-hashed, JWT session cookie).
-- **Company-wise question sets** with difficulty / frequency sorting and a timeframe switcher.
-- **Interactive tables** — search, filter, sort, mark solved, bookmark, open on LeetCode.
-- **Global explore** across all companies + a **daily challenge**.
-- **Compare** two companies to find the overlap of problems they both ask.
-- **Dashboard** — solved count, difficulty breakdown, revision (bookmark) list, per-question notes.
-- **Daily Suvichar** — public motivational board you post to from the admin panel.
-- **About Me** with social links (Google Drive image links auto-convert to direct URLs).
-- **Admin panel** (email allowlist) — CRUD for companies, questions, thoughts, and profile.
-- Custom animated cursor, aurora background, dark/light theme, and full responsiveness.
+- **Company-wise question sets** with an all-time / 2 years / 1 year / 6 months switcher, a level split and
+  the questions each company asks most often.
+- **Question lists** with search (by title or problem number), level and status filters, sorting by frequency,
+  acceptance, level or title, ticks, a revision list, and a **Random unsolved** pick.
+- **Questions across every company**: every problem once, most widely asked first. Open one to see
+  **which companies ask it**, how often, and whether it appears in their recent (6 month / 1 year / 2 year) lists.
+- **Daily question** for everyone, with your **streak** (solve at least one question a day).
+- **Compare** two companies: the overlap as a share of each list, the shared questions with your ticks,
+  and each company's own list.
+- **Dashboard**: solved count by level, current and longest streak, this week's solves, a 40-week
+  **activity heatmap**, the companies where you have solved most, and the revision list, solved list and notes.
+- **Command palette**: `⌘K` / `Ctrl+K` or `/` from anywhere to jump to a company, a question or a page.
+- **Daily Suvichar**, **About** with social links, **Admin panel** (email allowlist) for companies,
+  questions, thoughts, users and the profile.
+- Dark and light themes, full responsiveness, reduced-motion support.
 
-Sign-in is required for Companies, Explore, and Compare. Home, About, and Suvichar are public.
+Sign-in is required for Companies, Questions, Compare and the Dashboard. Home, About and Suvichar are public.
+
+## Design
+
+The look is documented in [DESIGN.md](DESIGN.md): graphite and safety orange, Onest and JetBrains Mono,
+sharp corners, a sage "lit ground" behind product pictures, and one motion vocabulary. The home page's
+painterly landscape and gradient mesh grounds are WebGL effects vendored from
+[taste-skill](https://github.com/leonxlnx/taste-skill) (MIT, see `src/lib/fx/LICENSE`).
+
+## Rate limits
+
+Every API route is rate limited (`src/lib/rate-limit.ts`). Counters live in MongoDB, so every server
+instance shares them, and expire on their own (TTL index). Subjects are stored as keyed hashes, never as
+raw emails or IPs. Over a limit, a route answers `429` with `Retry-After`.
+
+| Route | Limit |
+|---|---|
+| Sign in | 10 per email and 100 per IP, per 15 minutes |
+| Sign up | 30 per IP per hour |
+| Email code: verify | 10 per email and 100 per IP, per 10 minutes |
+| Email code: resend | 30 per IP per hour (plus the per-account cooldown) |
+| Google sign-in start and callback | 120 per IP per 10 minutes each |
+| Search, question details | 90 and 120 per account per minute |
+| Progress: read, write | 60 and 120 per account per minute |
+| Admin | 300 per admin per minute |
+
+Signed-in routes count per account, so many students behind one campus IP never share a budget.
+Change the numbers in `RULES`. For page-level flood protection, add a rate limiting rule in the Vercel Firewall.
 
 ## Setup
 
-1. **Install deps**
+1. **Install deps** (Node.js 20.9 or later)
    ```bash
    npm install
    ```
@@ -58,12 +89,20 @@ Sign-in is required for Companies, Explore, and Compare. Home, About, and Suvich
 ## Project structure
 
 - `src/app` — pages (landing, companies, questions, compare, suvichar, about, dashboard, admin,
-  sign-in, sign-up) and API routes (`/api/auth/*`, `/api/progress`, `/api/admin/*`).
-- `src/components` — UI (navbar, auth form/provider, cursor, question table, charts, admin panels).
+  sign-in, sign-up) and API routes (`/api/auth/*`, `/api/progress`, `/api/questions/[id]`, `/api/search`, `/api/admin/*`).
+- `src/components` — UI: `site/` (header, footer, command palette), `home/` (the home page's product pictures),
+  `explore/` (questions page and drawer), `fx/` (effect grounds, liquid type, loop ticker), `ui/` (shared pieces),
+  the question table, company charts, dashboard and admin panels.
 - `src/models` — Mongoose models (User, Company, Question, UserProgress, Thought, Profile).
 - `src/lib` — `db.ts`, `session.ts` (JWT cookie), `auth.ts` (guards + admin allowlist),
-  `data.ts` (queries), `utils.ts`.
+  `data.ts` (queries), `progress-store.ts` (shared ticks on the client), `streak.ts`, `utils.ts`, `fx/` (vendored effects).
 - `scripts/seed.ts` — GitHub → MongoDB importer.
 
 Auth is enforced per-route via `requireUser()` / `requireAdmin()` in each protected page and
 API handler (no middleware).
+
+## Credits
+
+- Effects runtime and product-UI fragment styles: [taste-skill](https://github.com/leonxlnx/taste-skill), MIT.
+- Icons: [Lucide](https://lucide.dev) (ISC); social marks from [Simple Icons](https://simpleicons.org) (CC0).
+- Question data: [LeetCode-Questions-CompanyWise](https://github.com/krishnadey30/LeetCode-Questions-CompanyWise).

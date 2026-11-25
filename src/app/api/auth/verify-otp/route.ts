@@ -3,11 +3,19 @@ import { connectDB } from "@/lib/db";
 import { User } from "@/models/User";
 import { checkOtp } from "@/lib/otp";
 import { signSession, setSessionCookie } from "@/lib/session";
+import { RULES, clientIp, rateLimit } from "@/lib/rate-limit";
 
 export async function POST(req: Request) {
-  const { email, code } = await req.json();
-  const cleanEmail = String(email ?? "").trim().toLowerCase();
+  const { email, code } = ((await req.json().catch(() => null)) ?? {}) as { email?: unknown; code?: unknown };
+  const cleanEmail = String(email ?? "").trim().toLowerCase().slice(0, 254);
   const cleanCode = String(code ?? "").trim();
+
+  // a 6-digit code is only safe while guesses are scarce
+  const limited = await rateLimit([
+    [RULES.otpVerifyIp, clientIp(req)],
+    ...(cleanEmail ? ([[RULES.otpVerifyEmail, cleanEmail]] as [typeof RULES.otpVerifyEmail, string][]) : []),
+  ]);
+  if (limited) return limited;
 
   if (!cleanEmail || !/^\d{6}$/.test(cleanCode)) {
     return NextResponse.json({ error: "Enter the 6-digit code." }, { status: 400 });

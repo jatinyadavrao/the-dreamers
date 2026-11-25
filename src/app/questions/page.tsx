@@ -1,51 +1,74 @@
-import { QuestionTable } from "@/components/question-table";
-import { CompanyFilter, DailyChallenge } from "@/components/explore-controls";
-import { Reveal } from "@/components/ui/reveal";
-import { getCompanies, searchQuestions } from "@/lib/data";
-import { dailyIndex } from "@/lib/utils";
-import { requireUser } from "@/lib/auth";
+import { Suspense } from "react";
+import { ExploreClient } from "@/components/explore/explore-client";
+import { EmptyState, PageHead } from "@/components/ui/kit";
+import { TableSkeleton } from "@/components/ui/skeletons";
+import { getCompanies, getExploreQuestions, pickDaily, searchQuestions, type ExploreQuestion } from "@/lib/data";
+import { requireUser, withQuery } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
-export const metadata = { title: "Explore questions · The Dreamers" };
+export const metadata = { title: "Questions" };
 
-export default async function QuestionsPage({
-  searchParams,
-}: PageProps<"/questions">) {
-  await requireUser("/questions");
+export default async function QuestionsPage({ searchParams }: PageProps<"/questions">) {
   const sp = await searchParams;
+  await requireUser(withQuery("/questions", sp, ["company", "open"]));
   const company = (Array.isArray(sp.company) ? sp.company[0] : sp.company) ?? "";
+  return (
+    <section className="wrap pb-24">
+      <Suspense
+        key={company}
+        fallback={
+          <div role="status" aria-label="Loading">
+            <PageHead title="Questions" lead="Every question across every company, most widely asked first." />
+            <span className="skel mb-10 block h-[176px] rounded-[8px]" aria-hidden />
+            <TableSkeleton />
+          </div>
+        }
+      >
+        <Questions company={company} />
+      </Suspense>
+    </section>
+  );
+}
 
-  const [companies, questions] = await Promise.all([
-    getCompanies().catch(() => []),
-    searchQuestions({ company: company || undefined, limit: 600 }).catch(() => []),
-  ]);
+async function Questions({ company }: { company: string }) {
+  const [companies, all] = await Promise.all([getCompanies().catch(() => []), getExploreQuestions().catch(() => [])]);
+  const known = companies.some((c) => c.slug === company);
 
-  const daily = questions.length ? questions[dailyIndex(questions.length)] : null;
+  let questions: ExploreQuestion[] = all;
+  if (company && known) {
+    // one company's list, each row still telling how many companies ask it
+    const counts = new Map(all.map((q) => [q.leetcodeId, q.companyCount]));
+    const rows = await searchQuestions({ company, limit: 2000 }).catch(() => []);
+    questions = rows.map((r) => ({ ...r, companyCount: counts.get(r.leetcodeId) ?? 1 }));
+  }
+  // today's question: the same pick for everyone, among the most widely asked (or the company's own)
+  const daily = pickDaily(company && known ? questions : all.slice(0, 600));
 
   return (
-    <section className="mx-auto max-w-5xl px-6 py-12">
-      <Reveal className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <h1 className="font-display text-4xl font-bold sm:text-5xl">
-            Explore <span className="text-gradient">questions</span>
-          </h1>
-          <p className="mt-2 text-[var(--muted)]">
-            Search across every company. Filter, sort, and track as you go.
-          </p>
-        </div>
-        <CompanyFilter companies={companies} />
-      </Reveal>
-
-      <DailyChallenge question={daily} />
-
-      {questions.length === 0 ? (
-        <div className="glass rounded-2xl p-10 text-center text-[var(--muted)]">
-          No questions yet. Run <code className="text-dream-300">npm run seed</code> to import data.
-        </div>
+    <>
+      <PageHead
+        title="Questions"
+        lead={
+          all.length
+            ? `Every question across ${companies.length} companies, most widely asked first. Open one to see which companies ask it.`
+            : undefined
+        }
+      />
+      {all.length === 0 ? (
+        <EmptyState
+          title="No questions yet"
+          body={
+            <>
+              Run <code className="font-mono text-ink">npm run seed</code> to import the question lists.
+            </>
+          }
+        />
       ) : (
-        <QuestionTable questions={questions} showCompany />
+        <Suspense>
+          <ExploreClient questions={questions} companies={companies} company={known ? company : ""} daily={daily} />
+        </Suspense>
       )}
-    </section>
+    </>
   );
 }

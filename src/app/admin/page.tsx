@@ -15,7 +15,7 @@ export default async function AdminPage() {
   ]);
 
   return (
-    <section className="mx-auto max-w-5xl px-6 py-12">
+    <section className="wrap">
       <AdminClient
         initialCompanies={companies}
         initialThoughts={thoughts}

@@ -4,13 +4,23 @@ import { connectDB } from "@/lib/db";
 import { User } from "@/models/User";
 import { signSession, setSessionCookie } from "@/lib/session";
 import { issueOtp } from "@/lib/otp";
+import { RULES, clientIp, rateLimit } from "@/lib/rate-limit";
 
 export async function POST(req: Request) {
-  const { email, password } = await req.json();
+  const { email, password } = ((await req.json().catch(() => null)) ?? {}) as { email?: unknown; password?: unknown };
   const cleanEmail = String(email ?? "").trim().toLowerCase();
+
+  const limited = await rateLimit([
+    [RULES.signinIp, clientIp(req)],
+    ...(cleanEmail ? ([[RULES.signinEmail, cleanEmail]] as [typeof RULES.signinEmail, string][]) : []),
+  ]);
+  if (limited) return limited;
 
   if (!cleanEmail || typeof password !== "string") {
     return NextResponse.json({ error: "Email and password are required." }, { status: 400 });
+  }
+  if (cleanEmail.length > 254 || password.length > 200) {
+    return NextResponse.json({ error: "Invalid email or password." }, { status: 401 });
   }
 
   await connectDB();

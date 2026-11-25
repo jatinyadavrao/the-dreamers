@@ -1,11 +1,14 @@
 import { NextResponse } from "next/server";
-import { isAdmin } from "@/lib/auth";
+import { emailIsAdmin } from "@/lib/auth";
+import { getSession } from "@/lib/session";
+import { RULES, rateLimit } from "@/lib/rate-limit";
 import { connectDB } from "@/lib/db";
 import { Thought } from "@/models/Thought";
 
 async function guard() {
-  if (!(await isAdmin())) return NextResponse.json({ error: "forbidden" }, { status: 403 });
-  return null;
+  const user = await getSession();
+  if (!user || !emailIsAdmin(user.email)) return NextResponse.json({ error: "forbidden" }, { status: 403 });
+  return rateLimit([[RULES.admin, user.userId]]);
 }
 
 export async function POST(req: Request) {

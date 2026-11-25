@@ -1,12 +1,15 @@
 import { Suspense } from "react";
 import { AuthForm } from "@/components/auth-form";
+import { AuthAside, AuthShell } from "@/components/auth-shell";
 
-export const metadata = { title: "Sign in · The Dreamers" };
+export const metadata = { title: "Sign in" };
 
-export default function SignInPage() {
+export default function Page() {
   return (
-    <Suspense>
-      <AuthForm mode="sign-in" />
-    </Suspense>
+    <AuthShell aside={<AuthAside />}>
+      <Suspense>
+        <AuthForm mode="sign-in" />
+      </Suspense>
+    </AuthShell>
   );
 }

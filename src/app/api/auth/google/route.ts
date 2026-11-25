@@ -2,10 +2,14 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { randomBytes } from "crypto";
 import { googleConfig, GOOGLE_AUTH_URL } from "@/lib/google";
+import { safeNext } from "@/lib/utils";
+import { RULES, clientIp, rateLimit } from "@/lib/rate-limit";
 
 export async function GET(req: Request) {
+  const limited = await rateLimit([[RULES.googleIp, clientIp(req)]]);
+  if (limited) return limited;
   const { clientId, redirectUri } = googleConfig();
-  const next = new URL(req.url).searchParams.get("next") || "/companies";
+  const next = safeNext(new URL(req.url).searchParams.get("next"));
   const state = randomBytes(16).toString("hex");
   const secure = process.env.NODE_ENV === "production";
 

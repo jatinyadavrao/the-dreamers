@@ -5,8 +5,7 @@ import { useRouter } from "next/navigation";
 import { Save, Check } from "lucide-react";
 import type { ProfileLite } from "@/lib/data";
 
-const input =
-  "w-full rounded-xl border border-[var(--border)] bg-[var(--card)] px-3 py-2.5 text-sm outline-none focus:border-dream-400";
+const input = "input input-sm";
 
 const SOCIAL_KEYS = ["instagram", "youtube", "twitter", "github", "linkedin"] as const;
 
@@ -32,8 +31,8 @@ export function ProfilePanel({ initial }: { initial: ProfileLite }) {
   }
 
   return (
-    <div className="glass space-y-4 rounded-2xl p-6">
-      <h3 className="font-display font-semibold">About Me</h3>
+    <div className="card space-y-4 p-6">
+      <h3 className="font-sans font-medium tracking-normal">About Me</h3>
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label="Name">
           <input className={input} value={p.name} onChange={(e) => setP({ ...p, name: e.target.value })} />
@@ -46,7 +45,7 @@ export function ProfilePanel({ initial }: { initial: ProfileLite }) {
         <input className={input} value={p.avatarUrl} onChange={(e) => setP({ ...p, avatarUrl: e.target.value })} />
       </Field>
       <Field label="Bio">
-        <textarea rows={3} className={input} value={p.bio} onChange={(e) => setP({ ...p, bio: e.target.value })} />
+        <textarea rows={3} className="textarea" value={p.bio} onChange={(e) => setP({ ...p, bio: e.target.value })} />
       </Field>
 
       <div className="grid gap-4 sm:grid-cols-2">
@@ -65,7 +64,7 @@ export function ProfilePanel({ initial }: { initial: ProfileLite }) {
       <button
         onClick={save}
         disabled={busy}
-        className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-dream-500 to-nebula-500 px-6 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
+        className="flex items-center gap-2 btn btn-primary btn-sm disabled:opacity-50"
       >
         {saved ? <Check className="h-4 w-4" /> : <Save className="h-4 w-4" />}
         {saved ? "Saved!" : "Save changes"}
@@ -77,7 +76,7 @@ export function ProfilePanel({ initial }: { initial: ProfileLite }) {
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label className="block">
-      <span className="mb-1.5 block text-xs font-medium text-[var(--muted)]">{label}</span>
+      <span className="mb-1.5 block text-xs font-medium text-muted">{label}</span>
       {children}
     </label>
   );

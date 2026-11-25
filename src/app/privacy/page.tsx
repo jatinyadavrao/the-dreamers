@@ -1,18 +1,17 @@
-import { Reveal } from "@/components/ui/reveal";
-
-export const metadata = { title: "Privacy Policy · The Dreamers" };
+export const metadata = { title: "Privacy Policy" };
 
 const UPDATED = "September 15, 2026";
 
 export default function PrivacyPage() {
   return (
-    <section className="mx-auto max-w-3xl px-6 py-16">
-      <Reveal>
-        <h1 className="font-display text-4xl font-bold">Privacy Policy</h1>
-        <p className="mt-2 text-sm text-[var(--muted)]">Last updated: {UPDATED}</p>
-      </Reveal>
+    <section className="wrap pb-24">
+      <div className="mx-auto max-w-[720px]">
+      <div className="page-in pt-10 pb-6 lg:pt-16">
+        <h1 className="text-[clamp(36px,2.6vw+24px,56px)] leading-[1.04] tracking-[-0.04em]">Privacy Policy</h1>
+        <p className="mt-3 text-[14px] text-muted">Last updated: {UPDATED}</p>
+      </div>
 
-      <div className="prose-invert mt-8 space-y-6 text-[var(--muted)] leading-relaxed">
+      <div className="mt-6 space-y-8 text-[16px] leading-relaxed text-ink-soft">
         <p>
           The Dreamers (&quot;we&quot;, &quot;us&quot;) provides a platform for practicing
           company-wise coding-interview questions. This policy explains what we collect and how we use it.
@@ -49,8 +48,9 @@ export default function PrivacyPage() {
         </Section>
 
         <Section title="Contact">
-          <p>Questions about this policy? Email <a className="text-dream-300 hover:underline" href="mailto:thedreamersbyjatin@gmail.com">thedreamersbyjatin@gmail.com</a>.</p>
+          <p>Questions about this policy? Email <a className="link" href="mailto:thedreamersbyjatin@gmail.com">thedreamersbyjatin@gmail.com</a>.</p>
         </Section>
+      </div>
       </div>
     </section>
   );
@@ -59,7 +59,7 @@ export default function PrivacyPage() {
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div>
-      <h2 className="font-display text-xl font-semibold text-[var(--foreground)]">{title}</h2>
+      <h2 className="font-sans text-[18px] font-medium tracking-normal text-ink">{title}</h2>
       <div className="mt-2">{children}</div>
     </div>
   );
