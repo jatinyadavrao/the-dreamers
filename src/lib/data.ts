@@ -376,58 +376,101 @@ export async function getCompanyProgress(solvedIds: number[]): Promise<Record<st
 /* ------------------------------------------------------------------ home page */
 
 export type ShowcaseRow = { leetcodeId: number; title: string; difficulty: Difficulty; acceptance: number };
+export type ShowcaseQuestion = { leetcodeId: number; title: string; difficulty: Difficulty; companyCount: number };
+export type ShowcaseOpen = {
+  title: string;
+  difficulty: Difficulty;
+  acceptance: number;
+  total: number;
+  companies: { name: string; slug: string; frequency: number }[];
+};
 export type HomeShowcase = {
   companies: { name: string; slug: string }[];
+  topCompanies: { name: string; slug: string; questionCount: number }[];
   hero: { company: string; rows: ShowcaseRow[] } | null;
-  mostAsked: { leetcodeId: number; title: string; difficulty: Difficulty; companyCount: number }[];
-  open: { title: string; difficulty: Difficulty; acceptance: number; total: number; companies: { name: string; slug: string; frequency: number }[] } | null;
-  pair: { a: string; b: string; shared: { title: string; difficulty: Difficulty }[] } | null;
+  mostAsked: ShowcaseQuestion[];
+  open: ShowcaseOpen | null;
+  searches: { query: string; results: ShowcaseQuestion[]; open: ShowcaseOpen }[];
+  pair: { a: string; b: string; sharedCount: number; shared: { title: string; difficulty: Difficulty }[] } | null;
   daily: { title: string; difficulty: Difficulty } | null;
+  palette: { query: string; companies: { name: string; questionCount: number }[]; questions: ShowcaseQuestion[] } | null;
 };
+
+const SEARCHES = ["sum", "tree", "interval"];
+const PALETTE_QUERY = "two";
+
+function toOpen(detail: QuestionDetail, max = 7): ShowcaseOpen {
+  return {
+    title: detail.title,
+    difficulty: detail.difficulty,
+    acceptance: detail.acceptance,
+    total: detail.companies.length,
+    companies: detail.companies.slice(0, max).map((c) => ({ name: c.name, slug: c.slug, frequency: c.frequency })),
+  };
+}
+const asShowcase = (q: ExploreQuestion): ShowcaseQuestion => ({
+  leetcodeId: q.leetcodeId,
+  title: q.title,
+  difficulty: q.difficulty,
+  companyCount: q.companyCount,
+});
 
 /** Real rows for the home page's product pictures (cached for 10 minutes per instance). */
 export async function getHomeShowcase(): Promise<HomeShowcase> {
   return memo("home-showcase", 10 * 60 * 1000, async () => {
     const [companies, explore] = await Promise.all([getCompanies(), getExploreQuestions()]);
-    const top = companies.slice(0, 5).map((c) => ({ name: c.name, slug: c.slug }));
     const lead = companies.find((c) => c.slug === "amazon") ?? companies[0];
     const second = companies.find((c) => c.slug === "google" && c.slug !== lead?.slug) ?? companies.find((c) => c.slug !== lead?.slug);
 
-    const [heroRows, detail, pairResult] = await Promise.all([
+    // what the search demo types, and what each query really finds (most widely asked first)
+    const found = SEARCHES.map((query) => ({
+      query,
+      results: explore.filter((q) => q.title.toLowerCase().includes(query)).slice(0, 8),
+    })).filter((x) => x.results.length >= 3);
+
+    const [heroRows, detail, pairResult, searchDetails] = await Promise.all([
       lead ? getCompanyQuestions(lead.slug, "alltime").then((r) => r.slice(0, 7)) : Promise.resolve([]),
       explore[0] ? getQuestionDetail(explore[0].leetcodeId) : Promise.resolve(null),
       lead && second ? compareCompanies(lead.slug, second.slug) : Promise.resolve(null),
+      Promise.all(found.map((x) => getQuestionDetail(x.results[0].leetcodeId))),
     ]);
 
-    const sidebar = lead ? [lead, ...companies.filter((c) => c.slug !== lead.slug)].slice(0, 5) : top;
+    const sidebar = lead ? [lead, ...companies.filter((c) => c.slug !== lead.slug)].slice(0, 5) : companies.slice(0, 5);
     const daily = pickDaily(explore.slice(0, 600));
+    const pq = PALETTE_QUERY;
     return {
       companies: sidebar.map((c) => ({ name: c.name, slug: c.slug })),
+      topCompanies: companies.slice(0, 28).map((c) => ({ name: c.name, slug: c.slug, questionCount: c.questionCount })),
       hero: lead
         ? {
             company: lead.name,
             rows: heroRows.map((q) => ({ leetcodeId: q.leetcodeId, title: q.title, difficulty: q.difficulty, acceptance: q.acceptance })),
           }
         : null,
-      mostAsked: explore.slice(0, 9).map((q) => ({ leetcodeId: q.leetcodeId, title: q.title, difficulty: q.difficulty, companyCount: q.companyCount })),
-      open: detail
-        ? {
-            title: detail.title,
-            difficulty: detail.difficulty,
-            acceptance: detail.acceptance,
-            total: detail.companies.length,
-            companies: detail.companies.slice(0, 9).map((c) => ({ name: c.name, slug: c.slug, frequency: c.frequency })),
-          }
-        : null,
+      mostAsked: explore.slice(0, 9).map(asShowcase),
+      open: detail ? toOpen(detail, 9) : null,
+      searches: found.flatMap((x, i) => {
+        const d = searchDetails[i];
+        return d ? [{ query: x.query, results: x.results.map(asShowcase), open: toOpen(d) }] : [];
+      }),
       pair:
         lead && second && pairResult
           ? {
               a: lead.name,
               b: second.name,
+              sharedCount: pairResult.shared.length,
               shared: pairResult.shared.slice(0, 3).map((q) => ({ title: q.title, difficulty: q.difficulty })),
             }
           : null,
       daily: daily ? { title: daily.title, difficulty: daily.difficulty } : null,
+      palette: {
+        query: pq,
+        companies: companies
+          .filter((c) => c.name.toLowerCase().includes(pq))
+          .slice(0, 2)
+          .map((c) => ({ name: c.name, questionCount: c.questionCount })),
+        questions: explore.filter((q) => q.title.toLowerCase().includes(pq)).slice(0, 4).map(asShowcase),
+      },
     };
   });
 }

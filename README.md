@@ -28,9 +28,8 @@ Sign-in is required for Companies, Questions, Compare and the Dashboard. Home, A
 ## Design
 
 The look is documented in [DESIGN.md](DESIGN.md): graphite and safety orange, Onest and JetBrains Mono,
-sharp corners, a sage "lit ground" behind product pictures, and one motion vocabulary. The home page's
-painterly landscape and gradient mesh grounds are WebGL effects vendored from
-[taste-skill](https://github.com/leonxlnx/taste-skill) (MIT, see `src/lib/fx/LICENSE`).
+sharp corners, and a quiet panel (one step off the page, in your theme) behind product pictures. The
+motion lives in the product pictures themselves: rows that tick off, a search that types, lists that link.
 
 ## Rate limits
 
@@ -91,11 +90,11 @@ Change the numbers in `RULES`. For page-level flood protection, add a rate limit
 - `src/app` — pages (landing, companies, questions, compare, suvichar, about, dashboard, admin,
   sign-in, sign-up) and API routes (`/api/auth/*`, `/api/progress`, `/api/questions/[id]`, `/api/search`, `/api/admin/*`).
 - `src/components` — UI: `site/` (header, footer, command palette), `home/` (the home page's product pictures),
-  `explore/` (questions page and drawer), `fx/` (effect grounds, liquid type, loop ticker), `ui/` (shared pieces),
+  `explore/` (questions page and drawer), `fx/` (liquid type, loop ticker), `ui/` (shared pieces),
   the question table, company charts, dashboard and admin panels.
 - `src/models` — Mongoose models (User, Company, Question, UserProgress, Thought, Profile).
 - `src/lib` — `db.ts`, `session.ts` (JWT cookie), `auth.ts` (guards + admin allowlist),
-  `data.ts` (queries), `progress-store.ts` (shared ticks on the client), `streak.ts`, `utils.ts`, `fx/` (vendored effects).
+  `data.ts` (queries), `progress-store.ts` (shared ticks on the client), `streak.ts`, `rate-limit.ts`, `utils.ts`.
 - `scripts/seed.ts` — GitHub → MongoDB importer.
 
 Auth is enforced per-route via `requireUser()` / `requireAdmin()` in each protected page and
@@ -103,6 +102,6 @@ API handler (no middleware).
 
 ## Credits
 
-- Effects runtime and product-UI fragment styles: [taste-skill](https://github.com/leonxlnx/taste-skill), MIT.
+- Product-UI fragment styles: [taste-skill](https://github.com/leonxlnx/taste-skill), MIT (see `THIRD_PARTY_NOTICES.md`).
 - Icons: [Lucide](https://lucide.dev) (ISC); social marks from [Simple Icons](https://simpleicons.org) (CC0).
 - Question data: [LeetCode-Questions-CompanyWise](https://github.com/krishnadey30/LeetCode-Questions-CompanyWise).

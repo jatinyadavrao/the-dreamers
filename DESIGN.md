@@ -17,8 +17,9 @@ Dark is the default; the light grade is the palette's inverse (buttons go graphi
 | `--action` (buttons, focus) | `#ff4a1f` | `#18191b` |
 | `--line` / `--line-strong` | ink at 11% / 20% | same |
 
-Lit ground (sage), behind product pictures: `--ground-bg #cdd6c6`, `--ground-surface #dce3d6`,
-`--ground-ink #262d24`, `--ground-muted #535b51`, `--ground-accent #6c8e63`.
+Stage, behind product pictures: a quiet panel one step off the page with a colourless sheen from its top
+edge, in the visitor's theme (dark `--ground-bg #121315`, fragments `#1d1e21`; light `#e4e5e7`, fragments white).
+Buttons on a stage use `btn-stage` (orange).
 
 Data colours were checked with the dataviz palette validator for both themes:
 difficulty `--easy / --medium / --hard` (dark `#2a9d74 #bd8418 #e2567e`, light `#17855e #a87c06 #c42a5a`)
@@ -40,14 +41,16 @@ difficulty is a coloured dot beside the word.
 
 - One ease-out (`cubic-bezier(.2,.8,.2,1)`), 120-180ms for hover and press; entrances use `cubic-bezier(.22,1,.36,1)`.
 - The hero enters once: the headline word by word out of masks, then the lead and the button, the window settling from 0.98.
-- Product pictures loop only while on screen and the tab is visible, and every loop has a pause button.
+- Product pictures loop only while on screen and the tab is visible.
   Reduced motion: loops rest on their first frame, the effects draw one still frame, nothing is hidden.
 - Liquid type on "Practice smarter, not harder" (pointer only; plain type on touch and reduced motion).
-- WebGL grounds (`FxGround`): `painterly-landscape` (hero, Suvichar, sign-in) and `gradient-mesh` (feature cards).
+- The company wall (twelve tiles inside the page width) turns one tile over to another company every couple of
+  seconds; counts count up once; headings and cards rise in on scroll;
+  the statement's words light up as it scrolls through the screen; the hero window leans toward the pointer.
 
 ## Rules
 
-- No eyebrow above a heading, no gradients on text, no glow, no emoji in the interface.
+- No eyebrow above a heading, no gradients on text, no glow, no decorative backgrounds, no emoji in the interface.
 - No invented numbers: counts, lists and frequencies come from the database. The home page's windows show
   real questions with sample ticks and say "Demo".
 - Product-UI fragments take the colours of the ground they sit on (`--fx-*`), so a fragment needs no theme class.

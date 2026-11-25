@@ -2,7 +2,6 @@
 
 import { useRef } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { PauseButton } from "@/components/fx/pause-button";
 import { useTicker } from "@/components/fx/use-ticker";
 
 type Note = { id: string; title: string; time: string; body: string; kind: "today" | "kept" };
@@ -30,7 +29,7 @@ function Tick() {
 export function DailyNotes({ today, past }: { today: { title: string; difficulty: string }; past: string[] }) {
   const label = `The Dreamers daily question: today's is ${today.title}, and the streak from the days before is kept`;
   const ref = useRef<HTMLDivElement>(null);
-  const { tick, paused, setPaused } = useTicker(ref, () => 2800);
+  const { tick } = useTicker(ref, () => 2800);
   // a day per note: day = tick - place. A note keeps its key as it moves down, its words follow its place.
   const titles = [today.title, ...(past.length ? past : ["Valid Parentheses", "Daily Temperatures"])];
   const at = (d: number) => titles[((d % titles.length) + titles.length) % titles.length];
@@ -42,7 +41,8 @@ export function DailyNotes({ today, past }: { today: { title: string; difficulty
   });
 
   return (
-    <div ref={ref} className="frame-lit relative grid min-h-[280px] place-items-center px-6 py-10 lg:min-h-[clamp(240px,calc(100svh-440px),460px)]">
+    <div ref={ref} className="panel frame-lit" style={{ ["--p-h" as string]: "336px" }}>
+      <div className="stage grid place-items-center px-6 py-8">
       <div className="ui ui-notify on-ground w-full max-w-[380px]" role="img" aria-label={label}>
         <ul className="ui-notify__list">
           <AnimatePresence initial={false} mode="popLayout">
@@ -70,7 +70,7 @@ export function DailyNotes({ today, past }: { today: { title: string; difficulty
           </AnimatePresence>
         </ul>
       </div>
-      <PauseButton paused={paused} onToggle={() => setPaused((p) => !p)} />
+      </div>
     </div>
   );
 }

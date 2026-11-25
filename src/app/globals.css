@@ -73,12 +73,12 @@
   --heat-3: #c24a1f;
   --heat-4: #93320f;
 
-  /* the lit ground: sage (hero frame, card panels, auth side) */
-  --ground-bg: #cdd6c6;
-  --ground-surface: #dce3d6;
-  --ground-ink: #262d24;
-  --ground-muted: #535b51;
-  --ground-accent: #6c8e63;
+  /* the stage behind product pictures: a quiet panel one step off the page, in the visitor's theme */
+  --ground-bg: #e4e5e7;
+  --ground-surface: #ffffff;
+  --ground-ink: #18191b;
+  --ground-muted: #5b5c5e;
+  --ground-accent: #ff4a1f;
 
   --nav: 72px;
   --gut: 24px;
@@ -117,6 +117,12 @@
   --heat-2: #b8411f;
   --heat-3: #e64c22;
   --heat-4: #ff8a63;
+
+  --ground-bg: #121315;
+  --ground-surface: #1d1e21;
+  --ground-ink: #eff0f1;
+  --ground-muted: #8e9096;
+  --ground-accent: #ff4a1f;
 }
 :root,
 .dark {
@@ -684,7 +690,7 @@
     box-shadow: inset 0 0 0 1px color-mix(in oklab, oklch(0.6 0.08 var(--h)) 26%, transparent);
   }
 
-  /* the lit ground (sage): frames holding product UI */
+  /* the stage: a quiet panel holding product UI */
   .frame-lit {
     position: relative;
     isolation: isolate;
@@ -692,16 +698,31 @@
     border-radius: 8px;
     background: var(--ground-bg);
     color: var(--ground-ink);
-    --fx-bg: var(--ground-bg);
-    --fx-surface: var(--ground-surface);
+    box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--ground-ink) 8%, transparent);
+    /* a soft, colourless sheen from the top edge: depth without decoration */
+    background-image: radial-gradient(120% 90% at 50% 0%, color-mix(in oklab, var(--ground-ink) 5%, transparent), transparent 65%);
+    --fx-bg: var(--ground-surface);
+    --fx-surface: color-mix(in oklab, var(--ground-surface) 94%, var(--ground-ink));
     --fx-ink: var(--ground-ink);
     --fx-muted: var(--ground-muted);
     --fx-accent: var(--ground-accent);
-    --fx-accent-ink: var(--ground-surface);
+    --fx-accent-ink: #18191b;
+    --ink: var(--ground-ink);
+    --ink-soft: color-mix(in oklab, var(--ground-ink) 84%, var(--ground-bg));
+    --muted: var(--ground-muted);
+    --line: color-mix(in oklab, var(--ground-ink) 11%, transparent);
+    --line-strong: color-mix(in oklab, var(--ground-ink) 20%, transparent);
   }
-  /* a fragment on the lit ground takes the ground's lighter surface */
   .frame-lit .on-ground {
     --fx-bg: var(--ground-surface);
+  }
+  /* the stage's own button: the brand orange in both themes */
+  .btn-stage {
+    background: var(--brand);
+    color: var(--brand-ink);
+  }
+  .btn-stage:hover:not(:disabled) {
+    background: color-mix(in oklab, var(--brand) 88%, #fff);
   }
 
   /* skeletons for loading states */

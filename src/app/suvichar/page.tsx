@@ -1,5 +1,4 @@
 import { EmptyState, PageHead } from "@/components/ui/kit";
-import { FxGround, SAGE } from "@/components/fx/fx-ground";
 import { getThoughts } from "@/lib/data";
 
 export const dynamic = "force-dynamic";
@@ -24,14 +23,11 @@ export default async function SuvicharPage() {
         <EmptyState title="No thoughts posted yet" body="Check back soon." />
       ) : (
         <>
-          <figure className="frame-lit relative grid min-h-[360px] content-end p-6 sm:p-10 lg:min-h-[440px] lg:p-14">
-            <FxGround
-              effect="painterly-landscape"
-              palette={SAGE}
-              seed={11}
-              params={{ blur: 1, brush: 0.3, slope: 6, hillY: 0.24, horizon: 0.58, calm: 0.9, calmX: 0.3, calmY: 0.7 }}
-            />
-            <div className="relative z-10 grid max-w-[720px] gap-5">
+          <figure className="frame-lit relative grid min-h-[320px] content-center p-6 sm:p-10 lg:min-h-[380px] lg:p-14">
+            <span aria-hidden="true" className="pointer-events-none absolute top-2 right-8 font-display text-[200px] leading-none text-brand/15 select-none sm:text-[260px]">
+              &rdquo;
+            </span>
+            <div className="relative z-10 grid max-w-[760px] gap-5">
               <span className="text-[14px] font-medium text-ground-muted">Today&apos;s Suvichar · {featured.category}</span>
               <blockquote className="text-[clamp(28px,2.2vw+18px,48px)] leading-[1.15] tracking-[-0.03em] text-ground-ink">
                 &ldquo;{featured.text}&rdquo;

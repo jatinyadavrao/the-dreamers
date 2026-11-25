@@ -8,6 +8,7 @@ import { Navbar } from "@/components/site/navbar";
 import { Footer } from "@/components/site/footer";
 import { CommandPalette } from "@/components/site/command-palette";
 import { InlineScript } from "@/components/inline-script";
+import { MotionProvider } from "@/components/motion-provider";
 import { getCurrentUser, emailIsAdmin } from "@/lib/auth";
 
 const onest = Onest({ variable: "--font-onest", subsets: ["latin"], display: "swap" });
@@ -51,12 +52,14 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
       <body className="flex min-h-full flex-col">
         <AuthProvider initialUser={user ? { email: user.email, name: user.name } : null}>
           <ThemeProvider>
+            <MotionProvider>
             <Navbar isAdmin={admin} />
             <main id="main" className="flex-1 pt-[var(--nav)]">
               {children}
             </main>
             <Footer />
             <CommandPalette />
+            </MotionProvider>
           </ThemeProvider>
         </AuthProvider>
         <Analytics />
